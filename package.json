@@ -3,16 +3,19 @@
 	"private": true,
 	"workspaces": [
 		"backend",
-		"frontend"
+		"design",
+		"frontend",
+		"site"
 	],
 	"scripts": {
 		"gen": "bun run --filter '*' gen",
 		"wasm": "wasm-pack build engine --target web --out-dir pkg",
 		"dev:backend": "DATABASE_URL=postgres://postgres:everymail@localhost:5432/everymail bun run --cwd backend dev",
+		"dev:site": "bun run --cwd site dev",
 		"dev:desktop": "tauri dev",
 		"dev:web": "bun run wasm && bun run --cwd frontend dev",
 		"build:desktop": "bun run wasm && tauri build",
-		"check": "biome check && buf lint proto && bun run --filter '*' typecheck && bun run --cwd backend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
+		"check": "biome check && buf lint proto && bun run --filter '*' typecheck && bun run --cwd backend test && bun run --cwd site test && bun run --cwd frontend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.7",

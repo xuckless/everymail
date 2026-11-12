@@ -51,7 +51,7 @@ pub fn transition(connection: Connection, event: Event) -> (Connection, Effect) 
     }
 }
 
-pub fn view(connection: Connection) -> ui::ShellView {
+pub fn view(connection: Connection) -> ui::ConnectionView {
     let state = match connection {
         Connection::Connecting => ViewState::Connecting(ui::Connecting {}),
         Connection::Connected => ViewState::Connected(ui::Connected {}),
@@ -66,9 +66,7 @@ pub fn view(connection: Connection) -> ui::ShellView {
             }),
         }),
     };
-    ui::ShellView {
-        connection: Some(ui::ConnectionView { state: Some(state) }),
-    }
+    ui::ConnectionView { state: Some(state) }
 }
 
 #[cfg(test)]

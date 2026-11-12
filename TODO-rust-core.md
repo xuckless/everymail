@@ -48,6 +48,7 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic.
 ## Inbox and thread reading
 
 - [ ] Navigation as one enum: inbox (all inboxes or one account, folder, tab), thread, calendar, briefing, agents, new agent, connect, settings section; persisted across relaunch
+- [x] Navigation path: one pure function from the navigation enum to a web path (`/u/<n>/` then the view and, for a thread, its id) and its inverse from a path to an intent; an unknown path is an explicit not-found state; round-trip tests
 - [ ] `ui.v1.InboxView`: sidebar (all inboxes with unread count, accounts with counts, Starred, Sent, Archive with count, Quarantine, agents with status and waiting count, the folders the user created), the For you, Updates and Reading tabs, and a window of rows
       Categories, Quarantine and folders come from Gatekeeper's sorting, synced from TODO-backend; nothing is derived from provider folders here
 - [ ] Row view: stable id, sender, account glyph, subject, row note, time label, unread, starred
@@ -103,10 +104,16 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic.
 - [ ] Agent notes in `AgentsView`: the agent's notebook and its per-thread notes, with an intent to edit one, sent to TODO-backend: `AgentService` notes
 - [ ] Approval queue view: items with agent, time, title, detail, reason and expiry, each item's state as a `oneof` (waiting, resolving, done, declined with a reason such as expired), and the waiting count for the sidebar
 - [ ] Intents for approve, edit, decline, run now, pause and resume, sent to TODO-backend: `AgentService` and `ApprovalService`
-- [ ] `ui.v1.AgentBuilderView`: name, instructions, all eight reactive triggers with sender, account and folder filters, the lead time for calendar event approaching, schedule options, accounts, Off/Ask/Auto per action, the new-recipient toggle, and the dry run as a `oneof` (idle, reading N messages across M accounts, results, failed)
+- [ ] `ui.v1.AgentBuilderView`: name, instructions, all eight reactive triggers with sender, account, folder (the watch folder) and agent filters, a custom interval in the schedule options, the lead time for calendar event approaching, schedule options, accounts, Off/Ask/Auto per action, the new-recipient toggle, and the dry run as a `oneof` (idle, reading N messages across M accounts, results, failed)
 - [ ] `ui.v1.BriefingView`: the briefings from News Bearer, newest first, from TODO-backend: `BriefingService`
+- [ ] News in `BriefingView`: a news section per briefing with items grouped by topic, each with title, source and link, and an explicit empty state when the user has no topics
+- [ ] News topics on News Bearer's detail in `AgentsView`: the topic list with intents to add and remove one, sent to TODO-backend: news topics
 - [ ] The unfinished new agent persisted as an engine draft until created or cancelled
 - [ ] Agent and approval changes reach an open app through the sync protocol
+- [ ] `ui.v1` chat view on the agents screen for agents that can chat: the conversation's turns with each turn's state as a `oneof`, references that open a thread or an event, and the chat's availability as a `oneof` (ready, turn running, off without a key, agent deactivated)
+- [ ] Engine-owned selection of the agent's activity or chat pane, with its web path
+- [ ] Intents to send a chat message and to clear the conversation, sent to TODO-backend: `ChatService`; a message being sent is an explicit state on the turn (sending, sent, failed with a reason)
+- [ ] Conversation synced into the local replica and updated through the sync protocol
       No permission or approval decision is duplicated from the Backend
 
 ## Settings and rules

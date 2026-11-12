@@ -1,0 +1,499 @@
+/* wide: the agent list, the selected agent and the queue */
+.agent-list {
+	width: 280px;
+	flex: none;
+	padding: 14px var(--space-2);
+}
+.agent-list-head {
+	display: flex;
+	align-items: center;
+	padding: 0 6px var(--space-2) var(--space-2);
+}
+.agent-list-scroll {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+}
+.agent-group {
+	height: 28px;
+	padding: 4px 12px 0;
+}
+.agent-group.second {
+	height: 36px;
+	padding-top: 12px;
+}
+.list-agent {
+	position: relative;
+	width: 100%;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 12px;
+	border-radius: 10px;
+	text-align: left;
+}
+
+.agent-main {
+	flex: 1;
+}
+.detail-stack {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.detail-stack > .overlap-layer {
+	min-height: 0;
+	height: 100%;
+}
+.detail-scroll {
+	height: 100%;
+	min-height: 0;
+}
+.agent-detail {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 28px 36px 40px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-6);
+}
+.agent-head {
+	display: flex;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+}
+.agent-title {
+	flex: 1;
+	min-width: 240px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.agent-head > .switch {
+	margin-top: 3px;
+}
+.agent-actions {
+	display: inline-flex;
+	gap: var(--space-2);
+}
+.agent-actions .btn.soft {
+	gap: var(--space-2);
+}
+.agent-edit {
+	color: var(--text);
+}
+.agent-delete {
+	color: var(--bad);
+}
+.agent-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.with-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.agent-text {
+	padding: 16px 18px;
+	font-size: 14.5px;
+	line-height: 1.65;
+	white-space: pre-line;
+}
+.agent-extra textarea {
+	padding: 12px 14px;
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+	font-size: 14.5px;
+	line-height: 1.6;
+}
+.agent-when {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.agent-when .when {
+	margin-right: 6px;
+}
+.time-chip {
+	background: var(--raised);
+	color: var(--text);
+}
+.agent-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-2);
+}
+.stat {
+	padding: 14px var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.stat-value {
+	font-size: 20px;
+	font-weight: 600;
+}
+.runs {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.run-head {
+	min-height: 44px;
+	gap: var(--space-3);
+	text-align: left;
+}
+.run-time {
+	width: 88px;
+	flex: none;
+}
+.run-steps {
+	padding: 4px 0 10px 66px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.run-step {
+	display: flex;
+	gap: 10px;
+	align-items: baseline;
+}
+.run-verb {
+	width: 64px;
+	flex: none;
+}
+
+/* the queue */
+.queue {
+	width: 360px;
+	flex: none;
+}
+.queue-head {
+	padding: var(--space-4) var(--space-4) 10px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.queue-count {
+	text-align: right;
+}
+.queue-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: 0 10px 12px;
+}
+.queue-rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.queue-item {
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.queue-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.queue-detail {
+	line-height: 1.5;
+}
+.queue-actions {
+	display: flex;
+	gap: 6px;
+}
+.queue-main {
+	flex: 1;
+}
+.queue-clear {
+	padding: 40px var(--space-4);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: center;
+}
+.queue-clear .ok {
+	color: var(--ok);
+}
+
+/* narrower desktop: one pane at a time */
+.agents-narrow {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.narrow-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding-top: 2px;
+}
+.narrow-bar .seg {
+	flex: 1;
+	max-width: 360px;
+}
+.narrow-stack {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.narrow-stack > .overlap-layer {
+	min-height: 0;
+	height: 100%;
+	display: flex;
+}
+.narrow-pane {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	gap: var(--space-2);
+}
+.narrow-stack .queue {
+	flex: 1;
+	width: auto;
+}
+
+/* phone */
+.agents-phone {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.phone-title {
+	font-size: 26px;
+}
+.new-agent {
+	background: var(--raised);
+}
+.phone-stack {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.phone-stack > .overlap-layer {
+	min-height: 0;
+	height: 100%;
+}
+.phone-pane,
+.queue-pane {
+	height: 100%;
+	min-height: 0;
+	padding: 0 12px var(--space-6);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.queue-pane .queue-item {
+	padding: var(--space-4);
+	gap: var(--space-2);
+}
+.queue-pane .queue-main,
+.queue-pane .queue-actions .btn {
+	height: 44px;
+	border-radius: var(--radius-lg);
+}
+.queue-pane .queue-clear {
+	padding: 80px var(--space-6);
+}
+.frame-phone .agent-group {
+	height: auto;
+	padding: var(--space-2) 6px 0;
+}
+.phone-agents {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.phone-agent {
+	padding: 4px 6px;
+}
+.phone-agent-head {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.phone-agent-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: 10px var(--space-2);
+	min-height: 56px;
+	text-align: left;
+}
+.phone-agent-main .strong {
+	font-size: 15px;
+}
+.phone-agent-head > .switch {
+	margin-right: var(--space-2);
+}
+.phone-expanded {
+	padding: 2px 14px 14px 27px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.phone-expanded .agent-text {
+	padding: 0;
+	line-height: 1.5;
+	font-size: 13px;
+}
+.phone-expanded .agent-extra textarea {
+	min-height: 44px;
+	padding: 11px var(--space-3);
+	background: var(--overlay);
+	font-size: 15px;
+	line-height: 1.45;
+}
+.agent-actions-row {
+	display: flex;
+	animation-delay: 60ms;
+}
+.agent-actions-row .agent-actions {
+	flex: 1;
+}
+.agent-actions-row .agent-actions .btn {
+	height: 44px;
+}
+.agent-actions-row .agent-actions .btn.soft {
+	flex: 1;
+	justify-content: center;
+}
+
+/* an agent that can chat: the head and pane list on top, the current pane under them */
+.agent-panes {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+.agent-panes .agent-detail {
+	width: 100%;
+}
+.agent-panes-head {
+	flex: none;
+	padding-bottom: var(--space-4);
+	gap: var(--space-4);
+}
+.agent-panes .detail-scroll .agent-detail {
+	padding-top: var(--space-2);
+}
+.detail-panes {
+	width: 220px;
+}
+
+/* chat: the conversation pinned to its newest turn, the composer under it */
+.chat {
+	height: 100%;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.chat-scroll {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column-reverse;
+}
+.chat-inner,
+.chat-foot {
+	width: 100%;
+	max-width: 760px;
+	margin: 0 auto;
+	padding: var(--space-2) 36px;
+}
+.chat-foot {
+	flex: none;
+	padding-bottom: var(--space-6);
+}
+.chat-turns {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+}
+.chat-turn {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.chat-asked {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-3);
+}
+.chat-message {
+	font-weight: 500;
+	line-height: 1.5;
+}
+.chat-answer {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	font-size: 14.5px;
+	line-height: 1.65;
+}
+.chat-references {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-1);
+}
+.chat-empty {
+	padding: 48px 0;
+	text-align: center;
+}
+.chat-note {
+	padding: 14px var(--space-4);
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+}
+.chat-off {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+/* the phone's full-screen chat */
+.agents-phone-stack {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.agents-phone-stack > .overlap-layer {
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.chat-phone-bar {
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: 44px 56px var(--space-1) var(--space-2);
+}
+.chat-phone .chat-inner,
+.chat-phone .chat-foot {
+	padding-left: var(--space-4);
+	padding-right: var(--space-4);
+}
+.chat-phone .chat-foot {
+	padding-bottom: var(--space-4);
+}
+.chat-phone .chat-message {
+	font-size: 15px;
+}

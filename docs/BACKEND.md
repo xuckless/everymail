@@ -68,12 +68,15 @@ Everything the Backend does on its own is a job: fetching mail, sending mail, sn
 - Triggers are reactive (an event happened) or proactive (a schedule came due)
 - Events are rows written in the same transaction as the change that caused them. A matcher turns events into jobs for subscribed agents, deduplicated by agent and event
 - Reactive triggers: new mail arrived, mail sorted into a category or moved to a folder, mail flagged, label or star added, another agent finished, approval resolved, calendar event approaching, file changed
-- Trigger filters (sender, account, folder) are evaluated in code before any LLM call. A proactive wakeup first runs a code-only check for anything new, so an idle wakeup costs no tokens
+- Trigger filters (sender, account, folder, agent) are evaluated in code before any LLM call. A proactive wakeup first runs a code-only check for anything new, so an idle wakeup costs no tokens
 - Each event carries its cause and a hop count. A chain of agents waking agents stops at depth 3. An agent's actions may wake other agents, never itself
 - A burst of mail creates one run per mail, with one run at a time per agent
 - New mail is detected by provider push where offered (Gmail watch, Microsoft Graph subscriptions) and by polling jobs otherwise. No held IMAP IDLE connections. Polled accounts are checked every 60 seconds. Target: under 60 seconds from arrival to wakeup with push, under 120 with polling
 - Provider webhooks arrive as JSON, the allowed exception to protobuf only. A webhook handler does nothing but enqueue a fetch job
 - "Calendar event approaching" carries a lead time in seconds set on the trigger
+- A watch folder is the folder filter on "moved to a folder": the agent wakes once for each mail that enters that folder, whoever put it there (the user, a rule or another agent). An agent may watch several folders. For Drive and OneDrive the same idea is "file changed" filtered to a folder
+- "Another agent finished" takes an agent filter naming one of the user's own agents, system agents included. Without the filter it would fire after every agent, so the filter is required. The run receives that agent's deliverable as its handover
+- A schedule is a fixed option or an interval in seconds, never under 900
 
 ## Agent runs
 
@@ -88,6 +91,21 @@ Everything the Backend does on its own is a job: fetching mail, sending mail, sn
 - An agent cannot create or change agents or schedules, its own included
 - A dry run is the same executor with every write recorded instead of executed. Its LLM calls count toward the caps
 - "Pause all" lets the current step finish, then moves each run to paused. Resuming returns them to ready
+
+## Agent chat
+
+The user can write to an agent and get an answer, for a question about their mail or calendar or a one-off request
+
+- Chat exists for agents the user created and for Assistant. Gatekeeper, Security Guard, Scribe and News Bearer have no chat
+- A chat turn is a run like any other. Its cause is a "user message" event, and its answer is the typed deliverable of `finish`: text plus references to the threads and events it is about. Prose is still never parsed
+- One conversation per agent. It is a fourth kind of memory, kept apart from the other three: it holds the user's messages and the agent's answers, never a transcript. A turn's prompt gets the latest turns in full plus a stored summary of the rest
+- The user's message is an instruction for that turn only. It cannot change the agent's stored instructions, permissions or schedule. Mail and notes read during the turn stay untrusted, and the run's read state applies as in any run
+- The agent's permissions apply unchanged. An action that resolves to Ask parks the turn and appears in the approval queue and in the conversation
+- One turn at a time per conversation: a message sent while a turn is running is refused, and the engine receives the running turn as an explicit state
+- The answer reaches the app through sync when the turn finishes. There is no token-by-token streaming at first
+- Chat turns count toward the safety caps and the token budget. Without a key, chat is off, as an explicit state
+- A conversation is kept 90 days, like the run log, and the user can clear it
+- An agent that can chat may read what Scribe and News Bearer already wrote: stored thread summaries, and the latest briefing plus the four before it. It reads them through tools when a turn needs them, so they are not part of every prompt. They are deliverables, never transcripts, and they enter the prompt as delimited data because they are built from mail
 
 ## Permissions and untrusted content
 
@@ -158,7 +176,9 @@ Everything the app does with judgement is done by an agent the user can see. Not
 - Security Guard wakes on mail flagged as malicious or a scam. On its own it moves the mail to Quarantine, adds the sender to the block list, reports it to the provider as spam, and notifies the user of what it caught. It never follows a link and never unsubscribes
 - Quarantine is an EveryMail folder. Reporting spam moves the mail to the provider's own spam folder, where the provider's retention applies; EveryMail drops its copy 30 days after the mail entered Quarantine
 - Scribe writes summaries and reply suggestions. It runs the first time one is needed, when the user opens a thread or another agent needs context, never on arrival
-- News Bearer writes a briefing at its set times: what agents did, what waits, newsletters and updates condensed, the day's calendar. It appears as a view with a notification, and a permission lets it also mail the briefing. Outside news is added later through EveryAI's web search tool
+- News Bearer writes a briefing at its set times: what agents did, what waits, newsletters and updates condensed, the day's calendar. It appears as a view with a notification, and a permission lets it also mail the briefing. Outside news comes later, see below
+- News topics, once EveryAI's web search tool is wired in: the user keeps a list of topics on News Bearer, at most 10, and each briefing gains a news section with a few items per topic, each with its source link. Web results are untrusted content like mail. With no topics the briefing has no news section and makes no search
+- Assistant answers the user in chat about their mail and calendar across every account. It has no trigger and no code stage: it wakes only on a message, so it is off without a key. It reads and searches on its own, and any write it proposes follows its Off, Ask or Auto settings like every agent
 - Order on a new mail: rules, then Gatekeeper. Security Guard wakes on "flagged". Other agents trigger on "sorted into a category or folder", or on "new mail", which fires when Gatekeeper has finished, whatever the outcome. With Gatekeeper deactivated, "new mail" fires at once
 - Gatekeeper and Security Guard never use a batch API: sorting cannot wait
 
@@ -190,6 +210,7 @@ Everything the app does with judgement is done by an agent the user can see. Not
 ## Gmail access
 
 - Gmail runs in Google's testing mode, limited to 100 named test users, while the restricted-scope verification and its security assessment proceed in parallel. Microsoft and IMAP accounts are open to everyone from the start
+- Until that verification is done, Send cannot be set to Auto on a Gmail account: agents prepare replies as drafts in EveryMail and the user approves each one
 
 ## User data
 
@@ -202,5 +223,8 @@ Everything the app does with judgement is done by an agent the user can see. Not
 
 ## Landing page
 
-- An Astro site in this repo, served at mail.everyai.dev, with the waitlist form from the design
+- An Astro site in this repo, served at the root of mail.everyai.dev, with the waitlist form from the design
+- The web app lives on the same origin under Gmail-style paths: `/u/<n>/` followed by the view and, for a thread, its id. `<n>` is the slot of the signed-in user in this browser, 0 until several sign-ins are supported
+- The Backend's calls stay on the same origin under their `/api.v1.` paths, so the session cookie and same-origin rule need no cross-origin setup
+- On web the path is the engine's navigation state written out: the engine produces it, and opening a link is an intent sent to the engine. The Frontend does no routing of its own
 - The waitlist form posts to one public Backend call. This is the single exception to the engine being the Backend's only client

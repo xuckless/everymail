@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// A new agent being written, with a dry run beside it. Back and Cancel are Intent.back.
+message AgentBuilderView {
+  string name = 1;
+  string instructions = 2;
+  // Ideas to start from.
+  repeated string ideas = 3;
+  // Every reactive trigger, each chosen or not.
+  repeated BuilderTrigger triggers = 4;
+  BuilderSchedule schedule = 5;
+  // Accounts it can see.
+  repeated BuilderAccount accounts = 6;
+  repeated Permission permissions = 7;
+  // Always ask before writing to someone new.
+  bool ask_before_new_recipient = 8;
+  // The model the dry run uses.
+  Model test_model = 9;
+  oneof dry_run {
+    DryRunIdle idle = 10;
+    DryRunReading reading = 11;
+    DryRunResults results = 12;
+  }
+  // The agent in short, as in the phone's last step: "Wakes", "Asks first".
+  repeated SummaryLine summary = 13;
+  // The steps a narrow layout walks one at a time, in order and ending in the summary, one of them
+  // current (Intent.select_builder_step). A wide layout shows everything and ignores which is current.
+  repeated BuilderStepTab steps = 14;
+}
+
+// The phone design's steps. The phone shows neither the accounts nor the new-recipient switch,
+// and the name only as the summary's title; the desktop shows them all.
+enum BuilderStep {
+  BUILDER_STEP_UNSPECIFIED = 0;
+  // Instructions and the ideas to start from.
+  BUILDER_STEP_INSTRUCTIONS = 1;
+  // Triggers and the schedule.
+  BUILDER_STEP_TRIGGERS = 2;
+  // Permissions.
+  BUILDER_STEP_PERMISSIONS = 3;
+  // The name as the title, then the summary lines.
+  BUILDER_STEP_SUMMARY = 4;
+}
+
+message BuilderStepTab {
+  BuilderStep step = 1;
+  // "What should it do"
+  string label = 2;
+  bool current = 3;
+}
+
+message BuilderTrigger {
+  string id = 1;
+  // "Mail sorted into a category or folder"
+  string label = 2;
+  bool chosen = 3;
+  // Checked in code before the model runs: "Sender" "Anyone".
+  repeated TriggerFilter filters = 4;
+  // The filters in one line: "Into For you, from anyone, Personal and Laurentian"
+  string filter_summary = 5;
+}
+
+message TriggerFilter {
+  string key = 1;
+  string value = 2;
+}
+
+message BuilderSchedule {
+  // Every choice, "No schedule" first.
+  repeated ScheduleChoice choices = 1;
+  oneof state {
+    Unscheduled none = 2;
+    Scheduled scheduled = 3;
+  }
+}
+
+message ScheduleChoice {
+  string label = 1;
+  bool selected = 2;
+}
+
+message Unscheduled {}
+
+message Scheduled {
+  // "Every hour"
+  string label = 1;
+}
+
+message BuilderAccount {
+  string id = 1;
+  string name = 2;
+  MailProvider provider = 3;
+  string provider_name = 4;
+  bool can_see = 5;
+}
+
+message DryRunIdle {}
+
+message DryRunReading {
+  // "Reading 30 messages across 2 accounts"
+  string progress = 1;
+}
+
+message DryRunResults {
+  // One per message it would touch.
+  repeated DryRunResult results = 1;
+}
+
+message DryRunResult {
+  string from = 1;
+  string action = 2;
+  oneof decision {
+    DecisionAsk ask = 3;
+    DecisionAuto auto = 4;
+    DecisionSkip skip = 5;
+  }
+}
+
+message DecisionAsk {}
+
+message DecisionAuto {}
+
+// Not something the agent would touch.
+message DecisionSkip {}
+
+message SummaryLine {
+  string label = 1;
+  string value = 2;
+}

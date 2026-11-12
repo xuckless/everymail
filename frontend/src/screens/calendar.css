@@ -1,0 +1,351 @@
+/* Calendar. Geometry: a minute is --k tall; --first is the grid's first minute. */
+
+/* Each calendar's colour, on the calendar and its events. */
+[data-cal="violet"] {
+	--cal-bg: var(--accent-bg);
+	--cal-fg: var(--accent-text);
+}
+[data-cal="cyan"] {
+	--cal-bg: var(--cyan-bg);
+	--cal-fg: var(--link);
+}
+[data-cal="amber"] {
+	--cal-bg: var(--warn-bg);
+	--cal-fg: var(--warn);
+}
+[data-look="pending"] {
+	--cal-bg: var(--raised);
+	--cal-fg: var(--warn);
+}
+[data-look="declined"] {
+	opacity: 0.5;
+}
+.cal-week {
+	--k: calc(52px / 60);
+	flex: 1;
+}
+.cal-bar {
+	height: 56px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px 0 18px;
+}
+.cal-range {
+	padding-left: 6px;
+}
+.cal-new {
+	margin-left: 6px;
+}
+.cal-cols {
+	display: grid;
+	grid-template-columns: 56px repeat(var(--days), minmax(0, 1fr));
+}
+.cal-heads {
+	flex: none;
+	padding: 0 8px 8px 0;
+}
+.cal-head {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	padding: 0 6px;
+}
+.cal-weekday {
+	color: var(--subtle);
+}
+.cal-daynum {
+	font-size: 15px;
+	font-weight: 600;
+}
+.cal-head.today,
+.cal-head.today .cal-weekday {
+	color: var(--accent-text);
+}
+/* the day a narrow layout would show */
+.cal-head.on {
+	border-radius: var(--radius-md);
+	background: var(--hover);
+}
+.cal-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: 8px 8px 16px 0;
+}
+.cal-body {
+	position: relative;
+	height: calc((var(--last) - var(--first) + 60) * var(--k) + 8px);
+}
+.cal-line {
+	position: absolute;
+	left: 56px;
+	right: 0;
+	top: calc((var(--at) - var(--first)) * var(--k));
+	height: 1px;
+	background: var(--line);
+	pointer-events: none;
+}
+.cal-hours {
+	position: relative;
+}
+.cal-hour {
+	position: absolute;
+	right: 10px;
+	top: calc((var(--at) - var(--first)) * var(--k) - 8px);
+}
+.cal-day {
+	position: relative;
+}
+.cal-event {
+	position: absolute;
+	left: 3px;
+	right: 3px;
+	top: calc((var(--start) - var(--first)) * var(--k) + 2px);
+	height: max(22px, (var(--end) - var(--start)) * var(--k) - 4px);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	padding: 4px 8px;
+	border-radius: 8px;
+	background: var(--cal-bg);
+	font-size: 12px;
+	line-height: 1.35;
+	text-align: left;
+}
+.cal-event > * {
+	flex: none;
+}
+.cal-title {
+	width: 100%;
+	font-weight: 500;
+}
+.cal-sub {
+	width: 100%;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--cal-fg);
+}
+.cal-pop {
+	top: calc((var(--end) - var(--first)) * var(--k) + 6px);
+	left: 3px;
+	width: 280px;
+	padding: 0;
+	transform-origin: top left;
+}
+
+/* the drawer: a floating panel at the right edge */
+.cal-drawer {
+	width: 400px;
+	padding: var(--space-2);
+}
+.cal-panel {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border-radius: 14px;
+	box-shadow: var(--shadow-pop);
+}
+.cal-drawer-head {
+	height: 56px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	padding: 0 10px 0 20px;
+}
+.cal-overlap {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.cal-overlap > .overlap-layer {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+.cal-fields {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.cal-fields-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: 4px 20px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+.cal-field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.cal-when {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+	gap: 6px;
+}
+.cal-when select,
+.cal-when input {
+	padding: 0 12px;
+	min-width: 0;
+}
+.cal-when select {
+	height: 44px;
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+}
+.cal-guest-add {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+}
+.cal-guest-add .btn {
+	height: 44px;
+}
+.cal-guest {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 40px;
+}
+.cal-foot {
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 14px 14px;
+}
+.cal-delete {
+	color: var(--bad);
+}
+.cal-save {
+	min-width: 96px;
+}
+
+/* the side panel */
+.cal-side {
+	width: 300px;
+	flex: none;
+	gap: 24px;
+	padding: 16px 14px;
+}
+[data-layout="list"] .cal-side {
+	display: none;
+}
+.cal-block {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.cal-side-title {
+	padding: 0 4px 8px;
+}
+.cal-source {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 48px;
+	padding: 0 4px;
+}
+.cal-swatch {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	border-radius: var(--radius-full);
+	background: var(--cal-fg);
+}
+.cal-note {
+	padding: var(--space-2) 4px 0;
+}
+.cal-block > .label {
+	padding: 0 4px;
+}
+
+/* phone */
+.cal-phone {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.cal-phone-title {
+	font-size: 26px;
+}
+.cal-today {
+	height: 40px;
+	border-radius: 12px;
+}
+.cal-strip {
+	position: relative;
+	display: grid;
+	grid-template-columns: repeat(var(--days), minmax(0, 1fr));
+}
+.cal-strip-day {
+	position: relative;
+	height: 56px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1px;
+	color: var(--muted);
+}
+.cal-strip-day.on {
+	color: var(--text);
+}
+.cal-strip-day.today,
+.cal-strip-day.today .cal-weekday {
+	color: var(--accent-text);
+}
+.cal-agenda {
+	flex: 1;
+	min-height: 0;
+	padding: var(--space-2) 12px var(--space-6);
+}
+.cal-agenda-label {
+	display: block;
+	padding: 4px 4px var(--space-2);
+}
+.cal-agenda-rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.cal-agenda-row {
+	display: flex;
+	gap: 12px;
+	width: 100%;
+	padding: 12px 14px;
+	border-radius: 14px;
+	background: var(--cal-bg);
+	line-height: 1.4;
+	text-align: left;
+}
+.cal-agenda-row .cal-title {
+	font-size: 15px;
+}
+.cal-start {
+	width: 44px;
+	flex: none;
+	color: var(--muted);
+}
+.cal-nothing {
+	padding: 48px 24px;
+	text-align: center;
+}
+.cal-strip .selection-mark {
+	border-radius: 12px;
+}
+.cal-agenda-row .cal-sub {
+	color: var(--cal-fg);
+}
+.cal-phone .sheet-body {
+	max-height: 85dvh;
+	display: flex;
+	flex-direction: column;
+}

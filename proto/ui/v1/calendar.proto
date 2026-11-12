@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// A week of events from every calendar in one view.
+message CalendarView {
+  // "November 2026"
+  string month = 1;
+  // "Nov 9 – 15"
+  string range = 2;
+  // The hours the grid shows, top to bottom.
+  repeated HourMark hours = 3;
+  repeated CalendarDay days = 4;
+  repeated CalendarSource calendars = 5;
+  // Invitations waiting for or holding an answer.
+  repeated Invitation invitations = 6;
+  // The selected event (Intent.select_event, closed with Intent.close_event).
+  oneof selected {
+    NoEventSelected none = 7;
+    EventDetail event = 8;
+    Invitation invitation = 9;
+  }
+}
+
+message HourMark {
+  // Minutes after midnight.
+  uint32 minute = 1;
+  // "8:00"
+  string label = 2;
+}
+
+message CalendarDay {
+  reserved 4;
+  // "Mon"
+  string weekday = 1;
+  // "9"
+  string day = 2;
+  bool today = 3;
+  // The phone agenda's title: "Today, Wed Nov 11", "Thu Nov 12"
+  string title = 7;
+  // Only events of calendars that are shown.
+  oneof agenda {
+    DayEvents events = 8;
+    NothingPlanned nothing = 9;
+  }
+  // The date: "2026-11-11"
+  string id = 5;
+  // The day a narrow layout shows (Intent.select_day); today until the user picks another.
+  bool selected = 6;
+}
+
+message DayEvents {
+  repeated CalendarEvent events = 1;
+}
+
+// A day without events.
+message NothingPlanned {
+  // "Nothing planned"
+  string text = 1;
+}
+
+// The colour a calendar is shown in, the same on the calendar and on each of its events.
+enum CalendarColor {
+  CALENDAR_COLOR_UNSPECIFIED = 0;
+  CALENDAR_COLOR_VIOLET = 1;
+  CALENDAR_COLOR_CYAN = 2;
+  CALENDAR_COLOR_AMBER = 3;
+}
+
+message CalendarEvent {
+  reserved 2;
+  string id = 1;
+  // Its calendar's colour.
+  CalendarColor color = 10;
+  string title = 3;
+  // "10:00 · FA-110", "Invitation · reply"
+  string detail = 4;
+  // Minutes after midnight.
+  uint32 start_minute = 5;
+  uint32 end_minute = 6;
+  bool selected = 7;
+  oneof kind {
+    PlainEvent plain = 8;
+    InvitationAnswer invitation = 9;
+  }
+  // The phone agenda's time column: "10:00"
+  string start = 11;
+  // The phone agenda's line: "10:00–11:30 · FA-110 · Laurentian", "Mira invited you · tap to reply"
+  string agenda_line = 12;
+}
+
+message PlainEvent {}
+
+message CalendarSource {
+  string id = 1;
+  string name = 2;
+  CalendarProvider provider = 3;
+  // "iCloud through CalDAV"
+  string provider_name = 4;
+  bool shown = 5;
+  CalendarColor color = 6;
+}
+
+message NoEventSelected {}
+
+// The event drawer, with the event's current values.
+message EventDetail {
+  reserved 6, 8;
+  string id = 1;
+  // The drawer's title: "Edit event"
+  string heading = 9;
+  string title = 2;
+  // The day choices: "Mon, Nov 9".
+  repeated Choice days = 3;
+  // "10:00"
+  string starts = 4;
+  string ends = 5;
+  repeated CalendarChoice calendars = 11;
+  // "Saved to Outlook calendar"
+  string saved_to = 7;
+  // "Mira"
+  repeated string guests = 10;
+}
+
+// One calendar the event can be saved to.
+message CalendarChoice {
+  string id = 1;
+  string name = 2;
+  CalendarColor color = 3;
+  bool selected = 4;
+}
+
+// One day the event can be on.
+message Choice {
+  string id = 1;
+  string label = 2;
+  bool selected = 3;
+}

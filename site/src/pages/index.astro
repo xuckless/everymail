@@ -1,0 +1,346 @@
+---
+import mark from "../../../assets/mark.svg?url";
+import Icon from "../components/Icon.astro";
+import Logo from "../components/Logo.astro";
+import { queueNote, when } from "../states";
+import "virtual:tokens.css";
+import "../site.css";
+
+const app = "/u/0/";
+const idle = (states: string) => when("idle", states);
+
+const accounts = [
+	{ logo: "gmail", name: "ali@gmail" },
+	{ logo: "outlook", name: "Laurentian" },
+	{ logo: "icloud", name: "iCloud" },
+];
+const gatekeeperAgents = ["Security Guard", "Scribe", "News Bearer"];
+const rows = [
+	{
+		from: "Prof. Okafor",
+		subject: "COSC 4456 exam room moved to FA-224",
+		time: "9:41",
+		keep: true,
+		outcome: "Kept in For you · flagged",
+		tone: "accent",
+	},
+	{
+		from: "Northline Talent",
+		subject: "Next steps: ML infrastructure interview loop",
+		time: "9:12",
+		keep: true,
+		outcome: "Kept · your tracker drafted a reply",
+		tone: "warn",
+	},
+	{
+		from: "Campus Rec",
+		subject: "Intramural sign-ups close Friday",
+		time: "8:58",
+		outcome: "Sorted into Updates",
+		tone: "subtle",
+	},
+	{
+		from: "Ridgeway Hosting",
+		subject: "Invoice #4471 for November",
+		time: "8:30",
+		outcome: "Sorted into Updates · handed to Receipts clerk",
+		tone: "subtle",
+	},
+	{
+		from: "The Pragmatic Digest",
+		subject: "This week: queues, caches and backpressure",
+		time: "7:45",
+		outcome: "Sorted into Reading · in the 18:00 briefing",
+		tone: "subtle",
+	},
+	{
+		from: "Mira (project group)",
+		subject: "Slides for Thursday, can you take section 3?",
+		time: "Yesterday",
+		keep: true,
+		outcome: "Kept in For you",
+		tone: "accent",
+	},
+	{
+		from: "Parcelway",
+		subject: "Your package is out for delivery",
+		time: "Yesterday",
+		outcome: "Sorted into Updates",
+		tone: "subtle",
+	},
+];
+const agents = [
+	{
+		id: "gatekeeper",
+		name: "Gatekeeper",
+		schedule: "On every new mail",
+		rules:
+			"Sort every new mail into For you, Updates, Reading or your own folders.\nFlag what needs you today.\nWhen you connect an account, ask once per bulk sender whether to unsubscribe.",
+		stats: [
+			["41", "sorted today"],
+			["2", "waiting for you"],
+			["2 min ago", "last run"],
+		],
+	},
+	{
+		id: "security-guard",
+		name: "Security Guard",
+		schedule: "When mail looks like a scam",
+		rules:
+			"Move scam and malicious mail to Quarantine.\nBlock the sender, report it as spam and tell me what it caught.\nNever follow a link, never unsubscribe.",
+		stats: [
+			["3", "in Quarantine"],
+			["14", "senders blocked"],
+			["7:12", "last catch"],
+		],
+	},
+	{
+		id: "scribe",
+		name: "Scribe",
+		schedule: "The first time a summary is needed",
+		rules:
+			"Summarise a thread when I first open it.\nSuggest short replies in my voice.",
+		stats: [
+			["63", "summaries this week"],
+			["18", "replies suggested"],
+			["8:52", "last run"],
+		],
+	},
+	{
+		id: "news-bearer",
+		name: "News Bearer",
+		schedule: "Daily at 7:30 and 18:00",
+		rules:
+			"Write a briefing: what agents did, what waits for me, newsletters and updates condensed, and today’s calendar.",
+		stats: [
+			["2", "briefings today"],
+			["9", "newsletters condensed"],
+			["18:00", "last run"],
+		],
+	},
+];
+const levels = ["Off", "Ask", "Auto"];
+const perms = [
+	{ label: "Read and label", hint: "Sort, tag and summarise", level: 2 },
+	{ label: "Archive", hint: "Clear handled mail", level: 2 },
+	{ label: "Draft replies", hint: "Write in your voice", level: 2 },
+	{ label: "Send", hint: "Mail leaves your account", level: 1 },
+	{ label: "Delete", hint: "Moves to trash", level: 0 },
+	{ label: "Unsubscribe", hint: "Opts out of lists", level: 1 },
+];
+const providers = [
+	{ logo: "gmail", name: "Gmail", how: "Google sign-in" },
+	{ logo: "outlook", name: "Outlook", how: "Microsoft 365 and outlook.com" },
+	{ logo: "icloud", name: "iCloud Mail", how: "IMAP with an app password" },
+	{ logo: "yahoo", name: "Yahoo Mail", how: "IMAP with an app password" },
+	{ logo: "fastmail", name: "Fastmail", how: "IMAP with an app password" },
+	{ logo: "imap", name: "Any IMAP", how: "Server and app password" },
+];
+const approvals = [
+	{ agent: "Job application tracker", title: "Reply to Northline Talent" },
+	{ agent: "Follow-up nudger", title: "Nudge Mira about section 3" },
+	{ agent: "Gatekeeper", title: "Unsubscribe from Jobstream weekly?" },
+];
+const initialAsks = perms
+	.filter((p) => p.level === 1)
+	.map((p) => p.label.toLowerCase());
+---
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>EveryMail</title>
+	<meta name="description" content="Bring Gmail, Outlook, iCloud and any IMAP account into one fast client, then hand the busywork to agents that run on a schedule, by your rules." />
+	<link rel="icon" href={mark} />
+</head>
+<body>
+	<header class="top">
+		<nav class="wrap nav">
+			<a class="brand" href="#top"><Logo name="mark" size={28} /><span class="wordmark">EveryMail</span></a>
+			<div class="links">
+				<a href="#agents">Agents</a>
+				<a href="#limits">Permissions</a>
+				<a href="#accounts">Accounts</a>
+				<a href="#apps">Apps</a>
+			</div>
+			<a class="btn ghost press signin" href={app}>Sign in</a>
+			<a class="btn primary press" href="#join">Get early access</a>
+		</nav>
+	</header>
+
+	<section id="top" class="wrap col center hero">
+		<h1 class="settle">Every inbox. One client, with agents that never clock out</h1>
+		<p class="settle muted stagger" style="--i: 2">Bring Gmail, Outlook, iCloud and any IMAP account into one fast client. Then hand the busywork to agents that run on a schedule, by your rules.</p>
+		<form id="join" class="settle stagger" style="--i: 4">
+			<label class="sr" for="email">Email address</label>
+			<input id="email" name="email" type="email" required placeholder="you@domain.com" autocomplete="email" />
+			<button type="submit" class="btn lg primary press fillbtn">
+				<span class="fill"></span>
+				<span class="stack" aria-live="polite">
+					<span {...idle("idle")}>Join the waitlist</span>
+					<span {...idle("sending")}>Joining</span>
+					<span {...idle("joined")}><Icon name="check" />You're on the list</span>
+					<span {...idle("already")}><Icon name="check" />Already on the list</span>
+					<span {...idle("invalid")}>Check the address</span>
+					<span {...idle("failed")}>Couldn't join, try again</span>
+				</span>
+			</button>
+		</form>
+		<p class="sm subtle">mail.everyai.dev · macOS, Windows, Linux, iPhone, Android and web</p>
+	</section>
+
+	<section class="wrap sec" style="padding-top: var(--space-6); padding-bottom: 120px" aria-label="Product preview">
+		<div id="demo" class="card mock" data-state="idle">
+			<aside>
+				<span class="lights"><i></i><i></i><i></i></span>
+				<span class="menu-row sel"><Icon name="inbox" /><span class="grow">All inboxes</span><span class="stack xs subtle"><span {...idle("idle sorting outcomes")}>7</span><span {...idle("done")}>3</span></span></span>
+				{accounts.map((a) => <span class="menu-row"><Logo name={a.logo} size={18} /><span class="trunc grow">{a.name}</span></span>)}
+				<span class="label">Agents</span>
+				<span class="menu-row"><span class="dot done live"></span><span class="grow">Gatekeeper</span></span>
+				{gatekeeperAgents.map((name) => <span class="menu-row"><span class="dot done"></span><span class="grow">{name}</span></span>)}
+				<span class="menu-row"><span class="dot wait"></span><span class="grow">Follow-up nudger</span></span>
+			</aside>
+			<div class="mock-main">
+				<div class="mock-head">
+					<span class="h2">All inboxes</span>
+					<span class="grow"></span>
+					<span class="stack sm subtle" aria-live="polite">
+						<span {...idle("idle")}>Last run 2 min ago</span>
+						<span {...idle("sorting outcomes")}>Sorting 3 accounts</span>
+						<span {...idle("done")}>4 sorted out of For you, 1 draft waiting</span>
+					</span>
+					<button class="btn soft press">
+						<span class="swap">
+							<span {...idle("idle sorting outcomes")}><Icon name="play" /></span>
+							<span {...idle("done")} style="color: var(--ok)"><Icon name="check" /></span>
+						</span>
+						Run Gatekeeper now
+					</button>
+				</div>
+				<div>
+					{rows.map((r, i) => (
+						<div class:list={["mrow", "row-in", "stagger", { keep: r.keep }]} style={`--i: ${i}`}>
+							<span class:list={["dot", r.keep ? "unread" : "idle"]}></span>
+							<span class="line"><span class="trunc from">{r.from}</span><span class="trunc subject">{r.subject}</span></span>
+							<span class="xs subtle time">{r.time}</span>
+							<span class={`outcome settle stagger xs ${r.tone}`} style={`--i: ${i}`}><Icon name="arrow-right" class="sm" />{r.outcome}</span>
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section id="agents" class="wrap sec">
+		<div class="split">
+			<div class="col">
+				<h2>Agents that keep working while you don't</h2>
+				<p class="lede">Four agents come with every account: Gatekeeper sorts every new mail, Security Guard quarantines scams, Scribe summarises and suggests replies, News Bearer writes your briefing. Add your own in plain words, with your own Anthropic, OpenAI, Gemini or OpenRouter key, and see exactly what each one did.</p>
+				<div class="seg tabs" role="radiogroup" aria-label="System agents" style={`--n: ${agents.length}`}>
+					<span class="ind"></span>
+					{agents.map((a, i) => <label class="opt">{a.name}<input type="radio" name="agent" value={a.id} checked={i === 0} /></label>)}
+				</div>
+			</div>
+			<div id="agent-cards" class="stack" data-state={agents[0]?.id}>
+				{agents.map((a) => (
+					<div {...when(agents[0]?.id ?? "", a.id)}>
+						<div class="tile agent-card">
+							<div class="agent-head">
+								<span class="badge"><Icon name="clock" class="lg" /></span>
+								<span class="grow col" style="gap: 0">
+									<span class="h2">{a.name}</span>
+									<span class="sm subtle">{a.schedule}</span>
+								</span>
+								<span class="running sm muted"><span class="dot run"></span>Running</span>
+							</div>
+							<div class="well">{a.rules}</div>
+							<div class="stats">
+								{a.stats.map(([v, k]) => <div><b>{v}</b><span class="xs subtle">{k}</span></div>)}
+							</div>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<section id="limits" class="wrap sec">
+		<div class="split rev">
+			<form id="perms" class="tile perms">
+				{perms.map((p) => (
+					<div class="perm">
+						<span><span>{p.label}</span><span class="xs subtle">{p.hint}</span></span>
+						<div class="seg" role="radiogroup" aria-label={p.label} style={`--n: ${levels.length}`}>
+							<span class="ind"></span>
+							{levels.map((level, j) => <label class="opt">{level}<input type="radio" name={p.label.toLowerCase()} value={level.toLowerCase()} checked={j === p.level} /></label>)}
+						</div>
+					</div>
+				))}
+			</form>
+			<div class="col">
+				<h2>Autonomous by default, careful where you say so</h2>
+				<p class="lede">Each action an agent can take has its own setting. Auto runs it without asking. Ask parks it in your approval queue with the draft ready to send. Off means the agent never sees that option.</p>
+				<p id="queue-note" class="settle accent">{queueNote(initialAsks)}</p>
+			</div>
+		</div>
+	</section>
+
+	<section id="accounts" class="wrap sec col center" style="gap: var(--space-8)">
+		<h2 style="max-width: 720px">Keep your addresses. Lose the tabs</h2>
+		<p class="lede" style="max-width: 620px">Sign in with Google or Microsoft, add any other account over IMAP with an app password, and EveryMail merges every inbox into one. Replies go out from the address the mail came to.</p>
+		<div class="providers">
+			{providers.map((p, i) => (
+				<div class="tile row-in stagger" style={`--i: ${i}`}>
+					<span><Logo name={p.logo} size={22} /></span>
+					<span><b>{p.name}</b><span class="xs subtle trunc">{p.how}</span></span>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<section id="apps" class="wrap sec">
+		<div class="split">
+			<div class="col">
+				<h2>One client on every screen</h2>
+				<p class="lede">The same inbox, agents and approval queue on desktop, phone and web. Approve a reply from your lock screen; your agents keep running whether any device is open or not.</p>
+				<div class="apps-cta">
+					<a class="btn soft lg press" href={app}>See the desktop app</a>
+					<a class="btn ghost lg press" href={app}>See the phone app</a>
+				</div>
+			</div>
+			<div class="phone">
+				<span class="h2">Approvals</span>
+				{approvals.map((q) => (
+					<div class="tile">
+						<span class="xs subtle"><span class="dot wait"></span>{q.agent}</span>
+						<span class="sm" style="font-weight: 500">{q.title}</span>
+						<span><button class="btn primary press">Approve</button><button class="btn soft press">Edit</button></span>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<section class="wrap col center close">
+		<Logo name="mark" size={56} />
+		<h2>Your inbox, handled</h2>
+		<a class="btn primary lg press" href="#join">Get early access</a>
+	</section>
+
+	<footer class="wrap sm subtle">
+		<Logo name="mark" size={18} />
+		<span>Part of EveryAI</span>
+		<span class="grow"></span>
+		<a href="#top">Privacy</a>
+		<a href="#top">Terms</a>
+		<a href="#top">Status</a>
+	</footer>
+
+	<script>
+		import "../scripts/demo";
+		import "../scripts/choices";
+		import "../scripts/waitlist";
+	</script>
+</body>
+</html>

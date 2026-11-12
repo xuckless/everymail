@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// Mail caught by Security Guard or sent by a blocked sender.
+message QuarantineView {
+  oneof state {
+    QuarantineEmpty empty = 1;
+    QuarantineList list = 2;
+  }
+}
+
+message QuarantineEmpty {}
+
+message QuarantineList {
+  repeated QuarantineRow rows = 1;
+  // The selected row (Intent.select_quarantined); a list always has one.
+  QuarantineDetail selected = 2;
+}
+
+message QuarantineRow {
+  string id = 1;
+  string from = 2;
+  MailProvider provider = 3;
+  string subject = 4;
+  // "Phishing: asks you to sign in on a look-alike page"
+  string reason = 5;
+  // "Sender blocked and reported to Gmail · dropped Dec 11"
+  string outcome = 6;
+  string time = 7;
+  bool selected = 8;
+  // The account's name: "Personal". The provider logo's accessible label.
+  string account = 9;
+}
+
+message QuarantineDetail {
+  reserved 3, 4;
+  string id = 1;
+  string subject = 2;
+  // "security@acc0unt-verify.net"
+  string from = 11;
+  string time = 5;
+  // "Caught by Security Guard"
+  string caught_by = 6;
+  string why = 7;
+  // "Sender blocked and reported to Gmail. EveryMail drops its copy Dec 11"
+  string outcome = 8;
+  // The body as plain text, links and images off; see ThreadView.MessageExpanded.body_url.
+  string body_url = 9;
+  // "to Personal"
+  string to_line = 10;
+}

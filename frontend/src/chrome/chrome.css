@@ -1,0 +1,214 @@
+/* The frame, sidebar, rail and phone tab bar. Measurements follow the design's artboards. */
+
+.frame {
+	position: relative;
+	display: flex;
+	height: 100dvh;
+	overflow: hidden;
+	background: var(--bg);
+}
+.frame-main {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	gap: var(--space-2);
+	margin: var(--space-2) var(--space-2) var(--space-2) 0;
+}
+.frame-phone,
+.frame-bare {
+	flex-direction: column;
+}
+.frame-screen {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.corner-status {
+	position: absolute;
+	top: 14px;
+	right: var(--space-4);
+	z-index: 50;
+}
+
+/* A screen's surface: tone, not borders. */
+.panel {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	background: var(--surface);
+	border-radius: var(--radius-lg);
+}
+.grow {
+	flex: 1;
+	min-width: 0;
+}
+
+.connection {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-width: 0;
+}
+.connection .stack {
+	min-width: 0;
+}
+
+/* sidebar */
+.sidebar {
+	width: 248px;
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	padding: 0 10px var(--space-3);
+}
+.sidebar-head {
+	height: 48px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding-right: var(--space-2);
+}
+.sidebar .compose {
+	height: 36px;
+	margin: 2px 0 var(--space-3);
+	justify-content: flex-start;
+	padding: 0 var(--space-3);
+}
+.sidebar .compose .kbd {
+	background: color-mix(in srgb, var(--on-primary) 16%, transparent);
+	color: var(--on-primary);
+}
+.sidebar-list {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+.nav-row {
+	color: var(--muted);
+}
+.nav-row[aria-current="page"] {
+	background: var(--hover);
+	color: var(--text);
+}
+.nav-row.subtle {
+	color: var(--subtle);
+}
+.group-label {
+	padding: var(--space-1) 10px 6px;
+}
+.group-gap {
+	height: var(--space-2);
+	flex: none;
+}
+.agent-dot {
+	margin: 0 var(--space-1);
+}
+.badge-dot {
+	margin-right: var(--space-1);
+}
+.sidebar .connection {
+	padding: 10px 10px 0;
+}
+.sidebar-user {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px var(--space-1) 0 var(--space-2);
+}
+.user-name {
+	font-size: 13.5px;
+	font-weight: 500;
+}
+
+/* rail */
+.rail {
+	width: 60px;
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: var(--space-4) 0 var(--space-3);
+}
+.rail-mark {
+	margin: var(--space-1) 0 14px;
+}
+.rail-item {
+	width: 40px;
+	height: 40px;
+}
+.rail-item[aria-current="page"] {
+	background: var(--hover);
+	color: var(--text);
+}
+.rail-status {
+	margin-top: auto;
+	flex-direction: column;
+}
+
+/* phone tab bar */
+.tabbar {
+	flex: none;
+	padding: var(--space-2) var(--space-4)
+		max(var(--space-3), env(safe-area-inset-bottom));
+	background: var(--bg);
+}
+.tabbar-tabs {
+	position: relative;
+	display: grid;
+}
+.tab .selection-mark {
+	border-radius: 14px;
+}
+.tab {
+	position: relative;
+	height: 52px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	font-size: 11px;
+	color: var(--subtle);
+	transition: color 200ms ease;
+}
+.tab.on {
+	color: var(--text);
+}
+.tab-icon {
+	position: relative;
+	display: inline-flex;
+}
+.tab-icon .dot {
+	position: absolute;
+	top: -1px;
+	right: -3px;
+}
+
+/* phone mailbox menu */
+.mailbox-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 44px;
+	font-size: 26px;
+}
+.mailbox-menu {
+	width: 260px;
+}
+
+/* The phone screens' header, under the status bar. */
+.phone-head {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: 48px var(--space-4) var(--space-2);
+}
+.phone-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}

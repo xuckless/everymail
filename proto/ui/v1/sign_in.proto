@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package ui.v1;
+
+// The sign-in screen: continue with Google or Microsoft (Intent.continue_with_provider).
+// It shows no data and has no states yet; the session is a later roadmap task.
+message SignInView {}

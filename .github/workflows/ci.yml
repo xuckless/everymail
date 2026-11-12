@@ -25,3 +25,12 @@ jobs:
       - run: bun run gen
       - run: bun run wasm
       - run: bun run check
+      - run: bun run --cwd site build
+      - run: bun run --cwd frontend build
+      - name: Bundle sizes
+        run: |
+          echo '| JS file | bytes | gzip |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| --- | --- | --- |' >> "$GITHUB_STEP_SUMMARY"
+          for f in frontend/dist/assets/*.js frontend/dist/*.js; do
+            echo "| ${f#frontend/dist/} | $(wc -c < "$f") | $(gzip -c "$f" | wc -c) |" >> "$GITHUB_STEP_SUMMARY"
+          done

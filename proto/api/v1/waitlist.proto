@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package api.v1;
+
+// Landing page to Backend, the one public call. Wire: POST /api.v1.WaitlistService/Join, body application/proto.
+service WaitlistService {
+  rpc Join(JoinRequest) returns (JoinResponse);
+}
+
+message JoinRequest {
+  string email = 1;
+}
+
+// An unset oneof is a decode error, never a state.
+message JoinResponse {
+  oneof outcome {
+    Joined joined = 1;
+    AlreadyJoined already_joined = 2;
+    InvalidAddress invalid_address = 3;
+  }
+}
+
+message Joined {}
+
+message AlreadyJoined {}
+
+message InvalidAddress {}

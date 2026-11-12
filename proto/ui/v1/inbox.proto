@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// Gatekeeper's categories, shown as the inbox tabs.
+enum InboxCategory {
+  INBOX_CATEGORY_UNSPECIFIED = 0;
+  INBOX_CATEGORY_FOR_YOU = 1;
+  INBOX_CATEGORY_UPDATES = 2;
+  INBOX_CATEGORY_READING = 3;
+}
+
+// A mailbox (all inboxes or one account) or a folder: its rows and the reading pane.
+message InboxView {
+  // "All inboxes", "Personal", "Receipts"
+  string title = 1;
+  oneof categories {
+    CategoryTabs tabs = 2;
+    Uncategorized uncategorized = 3;
+  }
+  // The whole listing in this skeleton. Rows carry stable ids so a later window of rows can replace it.
+  repeated MailRow rows = 4;
+  // The desktop reading pane: the selected row (Intent.select_thread).
+  oneof reading {
+    ReadingPreview preview = 5;
+    NothingSelected nothing = 6;
+  }
+}
+
+// A mailbox is sorted into categories (Intent.select_category).
+message CategoryTabs {
+  repeated CategoryTab tabs = 1;
+}
+
+message CategoryTab {
+  InboxCategory category = 1;
+  string label = 2;
+  bool selected = 3;
+}
+
+// A folder is not sorted into categories, so it shows no tabs.
+message Uncategorized {}
+
+message MailRow {
+  string thread_id = 1;
+  string from = 2;
+  // The account it came to.
+  MailProvider provider = 3;
+  string subject = 4;
+  RowNote note = 5;
+  // "9:41", "Yesterday"
+  string time = 6;
+  bool unread = 7;
+  // Shown in the reading pane.
+  bool selected = 8;
+  // The account's name: "Personal". The provider logo's accessible label.
+  string account = 9;
+}
+
+// What an agent did with the mail.
+message RowNote {
+  string text = 1;
+  NoteKind kind = 2;
+}
+
+enum NoteKind {
+  NOTE_KIND_UNSPECIFIED = 0;
+  // An agent made something that waits for the user, such as a draft.
+  NOTE_KIND_WAITING = 1;
+  // An agent flagged the mail for the user or suggested a reply.
+  NOTE_KIND_FLAGGED = 2;
+  // An agent sorted or filed the mail; for information only.
+  NOTE_KIND_FILED = 3;
+}
+
+// The latest message of the selected thread. "Open thread" is Intent.open_thread.
+message ReadingPreview {
+  reserved 3, 4;
+  string thread_id = 1;
+  string subject = 2;
+  // The latest message's sender: "Mira", "You"
+  string from = 10;
+  string time = 5;
+  Summary summary = 6;
+  // A sandboxed iframe source; see ThreadView.MessageExpanded.body_url.
+  string body_url = 7;
+  // Usually none.
+  repeated AgentDraft drafts = 8;
+  // "to Laurentian"
+  string to_line = 9;
+}
+
+// No row is selected, for example in an empty listing.
+message NothingSelected {}

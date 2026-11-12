@@ -12,7 +12,7 @@
 	"app": {
 		"windows": [{ "title": "EveryMail" }],
 		"security": {
-			"csp": "default-src 'self'; connect-src ipc: http://ipc.localhost"
+			"csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; frame-src body: http://body.localhost"
 		}
 	},
 	"bundle": {

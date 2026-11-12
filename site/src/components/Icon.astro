@@ -1,0 +1,10 @@
+---
+import icons from "@everymail/design/icons.svg?url";
+
+interface Props {
+	name: string;
+	class?: string;
+}
+const { name, class: size } = Astro.props;
+---
+<svg class:list={["i", size]} aria-hidden="true"><use href={`${icons}#${name}`} /></svg>

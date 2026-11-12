@@ -1,0 +1,44 @@
+.note-waiting {
+	color: var(--warn);
+}
+
+/* phone */
+.inbox-phone {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.inbox-phone-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: var(--space-1) var(--space-2) 96px;
+}
+.phone-row {
+	padding: calc(var(--row-pad) + 2px) var(--space-3);
+	border-radius: 14px;
+}
+.phone-row .row-dot {
+	margin-top: 7px;
+}
+.phone-from.unread {
+	font-weight: 600;
+}
+.phone-from {
+	font-size: 15px;
+	font-weight: 500;
+}
+.phone-subject {
+	font-size: 14px;
+}
+.fab {
+	position: absolute;
+	right: var(--space-4);
+	bottom: var(--space-4);
+	width: 56px;
+	height: 56px;
+	padding: 0;
+	border-radius: var(--radius-2xl);
+	box-shadow: var(--shadow-pop);
+}

@@ -1,0 +1,30 @@
+// AGENTS.md, State ownership: React state lives only in src/presentation.ts, the allowlist.
+language js
+
+or {
+	`useState($args)`,
+	`useReducer($args)`,
+	`useSyncExternalStore($args)`,
+	`$_.useState($args)`,
+	`$_.useReducer($args)`,
+	`$_.useSyncExternalStore($args)`,
+	`useRef($value)` where { $value <: not `null` },
+	`useRef<$type>($value)` where { $value <: not `null` },
+	`import $_ from $source` where {
+		$source <: or {
+			includes "zustand",
+			includes "jotai",
+			includes "valtio",
+			includes "redux",
+			includes "mobx",
+			includes "recoil",
+			includes "@tanstack/store",
+			includes "nanostores",
+			includes "effector",
+			includes "xstate"
+		}
+	}
+} as $state where {
+	$filename <: not r".*src/presentation\.ts$",
+	register_diagnostic(span=$state, message="State outside src/presentation.ts: declare it in the presentation allowlist, or it belongs in the engine")
+}

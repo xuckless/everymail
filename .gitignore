@@ -4,3 +4,4 @@ dist/
 gen/
 engine/pkg/
 .env
+.astro/

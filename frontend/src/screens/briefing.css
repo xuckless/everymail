@@ -1,0 +1,135 @@
+.briefing {
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.briefing-head {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--space-4);
+	flex-wrap: wrap;
+	width: 100%;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 36px 40px 0;
+}
+.briefing-title {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 240px;
+}
+.briefing-tabs {
+	width: 168px;
+}
+.briefing-scroll {
+	flex: 1;
+	min-height: 0;
+}
+.briefing-stack {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 28px 40px 56px;
+}
+.briefing-edition {
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+}
+.briefing-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.briefing-line {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.7;
+}
+.briefing-reads {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.briefing-reads .briefing-line {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.briefing-open {
+	align-self: flex-start;
+}
+.briefing-waiting {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.briefing-wait {
+	min-height: 52px;
+	gap: 12px;
+	margin: 0 -10px;
+	width: calc(100% + 20px);
+	text-align: left;
+}
+.briefing-wait .two-line > :first-child,
+.briefing-event .two-line > :first-child {
+	font-size: 15px;
+}
+.briefing-events {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.briefing-event {
+	display: flex;
+	gap: var(--space-4);
+	align-items: baseline;
+	padding: 6px 0;
+}
+.briefing-time {
+	width: 52px;
+	flex: none;
+}
+.briefing-open-calendar {
+	align-self: flex-start;
+	margin-top: 4px;
+}
+
+/* phone: the header and the edition fill the screen, the tab bar below */
+.frame-phone .briefing-head {
+	flex-wrap: nowrap;
+	padding: 54px var(--space-4) 10px;
+	max-width: none;
+}
+.frame-phone .briefing-title {
+	min-width: 0;
+	gap: 2px;
+}
+.frame-phone .briefing-title .h1 {
+	font-size: 26px;
+}
+.frame-phone .briefing-tabs {
+	width: 168px;
+}
+.frame-phone .briefing-stack {
+	padding: var(--space-2) var(--space-4) var(--space-6);
+}
+.frame-phone .briefing-line {
+	line-height: 1.65;
+}
+.frame-phone .briefing-open {
+	height: 44px;
+	border-radius: 12px;
+}
+.frame-phone .briefing-wait {
+	margin: 0 -12px;
+	width: calc(100% + 24px);
+}
+.frame-phone .briefing-event {
+	gap: 14px;
+}
+.frame-phone .briefing-time {
+	width: 64px;
+}

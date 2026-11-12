@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package ui.v1;
+
+// News Bearer's briefings: the editions, newest first, and the picked one (Intent.select_edition).
+message BriefingView {
+  repeated BriefingEditionTab editions = 1;
+  oneof state {
+    BriefingEdition edition = 2;
+    NoBriefing none = 3;
+  }
+}
+
+message BriefingEditionTab {
+  string id = 1;
+  // "7:30", "Tue 18:00"
+  string label = 2;
+  bool selected = 3;
+}
+
+// No briefing written yet.
+message NoBriefing {}
+
+message BriefingEdition {
+  reserved 2, 4, 5, 6, 7, 8;
+  // The same id as its tab: "b-wed-morning"
+  string id = 9;
+  // "Wednesday 7:30 · written by News Bearer"
+  string byline = 1;
+  // What the agents did.
+  LineSection activity = 10;
+  // Security Guard caught mail in this edition: the Frontend links to Quarantine.
+  bool caught_mail = 3;
+  WaitingSection waiting = 11;
+  LineSection newsletters = 12;
+  LineSection updates = 13;
+  CalendarSection calendar = 14;
+}
+
+// A section with nothing in it: its text, such as "No updates".
+message SectionEmpty {
+  string text = 1;
+}
+
+message LineSection {
+  oneof state {
+    BriefingLines lines = 1;
+    SectionEmpty empty = 2;
+  }
+}
+
+message BriefingLines {
+  repeated BriefingLine lines = 1;
+}
+
+message WaitingSection {
+  oneof state {
+    BriefingWaitingList waiting = 1;
+    SectionEmpty empty = 2;
+  }
+}
+
+message BriefingWaitingList {
+  repeated BriefingWaiting items = 1;
+}
+
+message CalendarSection {
+  // "Today", "Tomorrow"
+  string title = 1;
+  oneof state {
+    BriefingEvents events = 2;
+    SectionEmpty empty = 3;
+  }
+}
+
+message BriefingEvents {
+  repeated BriefingEvent events = 1;
+}
+
+message BriefingLine {
+  // The agent or sender: "Gatekeeper", "Dev Weekly"
+  string source = 1;
+  string text = 2;
+}
+
+// Opens the agents screen (Intent.open_agents).
+message BriefingWaiting {
+  reserved 2, 3;
+  string title = 1;
+  // The line under the title: "Gatekeeper · 46 mails in 90 days, you opened 2"
+  string detail = 4;
+}
+
+message BriefingEvent {
+  string time = 1;
+  string title = 2;
+  // "FA-110 · Laurentian"
+  string detail = 3;
+}

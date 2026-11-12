@@ -2,9 +2,42 @@ syntax = "proto3";
 
 package ui.v1;
 
+import "ui/v1/agent_builder.proto";
+import "ui/v1/agents.proto";
+import "ui/v1/briefing.proto";
+import "ui/v1/calendar.proto";
+import "ui/v1/common.proto";
+import "ui/v1/connect.proto";
+import "ui/v1/inbox.proto";
+import "ui/v1/quarantine.proto";
+import "ui/v1/settings.proto";
+import "ui/v1/sign_in.proto";
+import "ui/v1/thread.proto";
+
 // Engine to Frontend: the whole shell, resent on every change.
 message ShellView {
   ConnectionView connection = 1;
+  Theme theme = 2;
+  // The chrome shared by screens. Sign-in and connect are laid out without it.
+  Navigation navigation = 3;
+  // The navigation state written out as a web path, such as "/u/0/thread/t-slides". The web Frontend
+  // puts it in the address bar and sends the address bar's path back with Intent.open_path.
+  string path = 4;
+  // Exactly one screen.
+  oneof screen {
+    SignInView sign_in = 5;
+    ConnectView connect = 6;
+    InboxView inbox = 7;
+    ThreadView thread = 8;
+    AgentsView agents = 9;
+    AgentBuilderView agent_builder = 10;
+    SettingsView settings = 11;
+    CalendarView calendar = 12;
+    QuarantineView quarantine = 13;
+    BriefingView briefing = 14;
+  }
+  // Set with Intent.set_density; Comfortable until the user picks another.
+  Density density = 15;
 }
 
 // An unset oneof is a decode error, never a state.
@@ -31,11 +64,265 @@ message BackendUnreachable {}
 
 message DatabaseUnavailable {}
 
+// The desktop sidebar and rail, the phone's bottom bar and mailbox menu.
+message Navigation {
+  reserved 1;
+  // The signed-in user's name: "Ali"
+  string user_name = 11;
+  // The rail and bottom-bar destination of the current screen.
+  Destination destination = 2;
+  // Intent.open_inbox with InboxScope.all.
+  NavMailbox all_inboxes = 3;
+  // Intent.open_inbox with InboxScope.account_id.
+  repeated NavAccount accounts = 4;
+  // Intent.open_calendar.
+  NavCalendar calendar = 5;
+  // Intent.open_briefing.
+  NavBriefing briefing = 6;
+  repeated NavFolder folders = 7;
+  // Intent.select_agent.
+  repeated NavAgent system_agents = 8;
+  repeated NavAgent user_agents = 9;
+  // An agent waits for the user: the dot on the phone's Agents tab.
+  bool agents_waiting = 10;
+}
+
+enum Destination {
+  DESTINATION_UNSPECIFIED = 0;
+  // Sign-in and connect, which show no navigation.
+  DESTINATION_NONE = 1;
+  // Inbox, folders, threads and Quarantine.
+  DESTINATION_INBOX = 2;
+  DESTINATION_CALENDAR = 3;
+  DESTINATION_BRIEFING = 4;
+  // Agents and the agent builder.
+  DESTINATION_AGENTS = 5;
+  DESTINATION_SETTINGS = 6;
+}
+
+message NavMailbox {
+  // Unread count: "3"
+  string unread = 1;
+  bool current = 2;
+}
+
+message NavAccount {
+  string id = 1;
+  string name = 2;
+  MailProvider provider = 3;
+  string unread = 4;
+  bool current = 5;
+}
+
+message NavCalendar {
+  // The time of the next event: "10:00"
+  string next_event = 1;
+  bool current = 2;
+}
+
+message NavBriefing {
+  // An edition the user has not read yet.
+  bool unread = 1;
+  bool current = 2;
+}
+
+message NavFolder {
+  string id = 1;
+  string name = 2;
+  // "214", "3"
+  string count = 3;
+  bool current = 4;
+  // Quarantine opens with Intent.open_quarantine, every other folder with Intent.open_inbox and
+  // InboxScope.folder_id.
+  oneof kind {
+    StarredFolder starred = 5;
+    SentFolder sent = 6;
+    ArchiveFolder archive = 7;
+    QuarantineFolder quarantine = 8;
+    UserFolder user = 9;
+  }
+}
+
+message StarredFolder {}
+
+message SentFolder {}
+
+message ArchiveFolder {}
+
+message QuarantineFolder {}
+
+// A folder the user created.
+message UserFolder {}
+
+message NavAgent {
+  string id = 1;
+  string name = 2;
+  AgentStatus status = 3;
+  // The waiting count or the next run: "2", "18:00"
+  string note = 4;
+}
+
 // Frontend to engine.
 message Intent {
   oneof kind {
     RetryConnection retry_connection = 1;
+    SetTheme set_theme = 2;
+    OpenPath open_path = 3;
+    Back back = 4;
+    ContinueWithProvider continue_with_provider = 5;
+    OpenConnect open_connect = 6;
+    PickMailProvider pick_mail_provider = 7;
+    ConfirmConnect confirm_connect = 8;
+    OpenInbox open_inbox = 9;
+    SelectCategory select_category = 10;
+    SelectThread select_thread = 11;
+    OpenThread open_thread = 12;
+    ExpandMessage expand_message = 13;
+    CollapseMessage collapse_message = 14;
+    OpenAgents open_agents = 15;
+    SelectAgent select_agent = 16;
+    OpenAgentBuilder open_agent_builder = 17;
+    OpenSettings open_settings = 18;
+    OpenCalendar open_calendar = 19;
+    SelectEvent select_event = 20;
+    CloseEvent close_event = 21;
+    OpenQuarantine open_quarantine = 22;
+    SelectQuarantined select_quarantined = 23;
+    OpenBriefing open_briefing = 24;
+    SelectEdition select_edition = 25;
+    SelectAgentsPane select_agents_pane = 26;
+    SelectBuilderStep select_builder_step = 27;
+    SelectDay select_day = 28;
+    SelectAgentDetailPane select_agent_detail_pane = 29;
+    SetDensity set_density = 30;
   }
 }
 
 message RetryConnection {}
+
+message SetTheme {
+  Theme theme = 1;
+}
+
+// Navigate to a web path, such as the address bar's on load or on the browser's back and forward.
+// An unknown path lands on the inbox.
+message OpenPath {
+  string path = 1;
+}
+
+// The back affordance: thread to inbox, agent builder to agents, an agent's chat to its activity,
+// Quarantine to inbox, and a connect step to the provider list. Elsewhere it changes nothing.
+message Back {}
+
+// Sign in, then connect accounts.
+message ContinueWithProvider {
+  SignInProvider provider = 1;
+}
+
+message OpenConnect {}
+
+// Starts connecting an account at this provider.
+message PickMailProvider {
+  MailProvider provider = 1;
+}
+
+// "I've signed in" or the IMAP form's Connect. In this skeleton it shows the syncing step and adds
+// nothing; connecting for real is a later roadmap task.
+message ConfirmConnect {}
+
+// Opens a mailbox or folder, on its For you tab.
+message OpenInbox {
+  InboxScope scope = 1;
+}
+
+message InboxScope {
+  oneof scope {
+    AllInboxes all = 1;
+    string account_id = 2;
+    string folder_id = 3;
+  }
+}
+
+message AllInboxes {}
+
+message SelectCategory {
+  InboxCategory category = 1;
+}
+
+// Shows a row of the current listing in the reading pane.
+message SelectThread {
+  string thread_id = 1;
+}
+
+message OpenThread {
+  string thread_id = 1;
+}
+
+// A message of the open thread.
+message ExpandMessage {
+  string message_id = 1;
+}
+
+message CollapseMessage {
+  string message_id = 1;
+}
+
+message OpenAgents {}
+
+// Shows this agent on the agents screen, opening it from anywhere, on the agent's default pane
+// (AgentChat).
+message SelectAgent {
+  string agent_id = 1;
+}
+
+message OpenAgentBuilder {}
+
+message OpenSettings {
+  SettingsSection section = 1;
+}
+
+message OpenCalendar {}
+
+// Shows this event on the calendar, opening it from anywhere (a chat answer's event reference),
+// with the event's day as the day a narrow layout shows.
+message SelectEvent {
+  string event_id = 1;
+}
+
+message CloseEvent {}
+
+message OpenQuarantine {}
+
+message SelectQuarantined {
+  string quarantined_id = 1;
+}
+
+message OpenBriefing {}
+
+message SelectEdition {
+  string edition_id = 1;
+}
+
+// The pane a narrow agents screen shows.
+message SelectAgentsPane {
+  AgentsPane pane = 1;
+}
+
+// The step a narrow agent builder shows: its Continue, Back and step indicator.
+message SelectBuilderStep {
+  BuilderStep step = 1;
+}
+
+// The calendar day a narrow layout shows, by CalendarDay id.
+message SelectDay {
+  string day_id = 1;
+}
+
+// Activity or chat of the selected agent. Chat is ignored for an agent that has no chat pane.
+message SelectAgentDetailPane {
+  AgentDetailPane pane = 1;
+}
+
+message SetDensity {
+  Density density = 1;
+}

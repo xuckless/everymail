@@ -1,0 +1,156 @@
+.connect {
+	flex: 1;
+	min-height: 0;
+}
+.connect-body {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 88px var(--space-6) 60px;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-8);
+}
+.connect-head {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	text-align: center;
+}
+.connect-title {
+	font-size: 28px;
+}
+.connect-lede {
+	font-size: 15px;
+	max-width: 460px;
+}
+.connect-group {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.connect-label {
+	padding: 0 6px;
+}
+
+.connected {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+.connected-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3) 14px;
+}
+
+.connect-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 10px;
+}
+[data-layout="list"] .connect-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.provider-tile {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	text-align: left;
+}
+
+.connect-step {
+	padding: 28px;
+}
+.connect-centered {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-4);
+	text-align: center;
+}
+.connect-note {
+	max-width: 380px;
+}
+.connect-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+.connect-step-head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.connect-server {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 120px;
+	gap: 10px;
+}
+.connect-actions {
+	display: flex;
+	gap: var(--space-2);
+}
+.connect-actions.end {
+	justify-content: flex-end;
+}
+.connect-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-3);
+}
+.connect-stats > span {
+	display: flex;
+	flex-direction: column;
+}
+.connect-stat {
+	font-size: 18px;
+	font-weight: 600;
+}
+.connect-foot {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: 0 6px;
+}
+
+/* phone */
+.connect-phone {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.connect-phone-body {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-6);
+	padding: 72px var(--space-4) var(--space-4);
+}
+.connect-phone .connected-row {
+	gap: var(--space-3);
+}
+.provider-list {
+	padding: var(--space-1);
+}
+.provider-list .menu-row {
+	gap: 14px;
+}
+.connect-phone-foot {
+	flex: none;
+	padding: var(--space-3) var(--space-4) 30px;
+}
+.connect-phone-foot .btn {
+	width: 100%;
+}
+.sheet .connect-step {
+	padding: 0 0 var(--space-2);
+}
+.sheet .connect-actions .btn {
+	flex: 1;
+}

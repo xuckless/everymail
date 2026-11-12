@@ -1,0 +1,55 @@
+.sign-in {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 28px;
+	padding: var(--space-6);
+	text-align: center;
+}
+.sign-in-hero {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+}
+.sign-in-title {
+	font-size: 28px;
+}
+.sign-in-lede {
+	font-size: 15px;
+	max-width: 340px;
+}
+.sign-in-actions {
+	width: 100%;
+	max-width: 340px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.sign-in-actions .btn {
+	width: 100%;
+	gap: 10px;
+}
+
+/* Phone: the mark and lede centred, the buttons at the bottom within thumb reach. */
+.frame-phone .sign-in {
+	padding: 0;
+	gap: 0;
+}
+.frame-phone .sign-in-lede {
+	max-width: 280px;
+}
+.frame-phone .sign-in-hero {
+	flex: 1;
+	justify-content: center;
+	padding: 0 var(--space-6);
+}
+.frame-phone .sign-in-actions {
+	max-width: none;
+	padding: var(--space-3) var(--space-4) 30px;
+}
+.frame-phone .sign-in-actions .btn {
+	height: 52px;
+}

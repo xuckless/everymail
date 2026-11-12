@@ -1,0 +1,329 @@
+/* Layout the primitives in src/ui need beyond design/components.css. Colours, radii, spacing and
+   timings are the design tokens; component and motion classes come from the design package. */
+
+/* Popover: below its trigger's corner (or across its width), scaling from that corner. */
+.pop-anchor {
+	position: relative;
+	display: inline-flex;
+}
+.pop-anchor-wide {
+	display: flex;
+}
+.pop-start,
+.pop-end,
+.pop-stretch {
+	top: calc(100% + 6px);
+}
+.pop-start,
+.pop-stretch {
+	left: 0;
+	transform-origin: top left;
+}
+.pop-stretch {
+	right: 0;
+}
+.pop-end {
+	right: 0;
+	transform-origin: top right;
+}
+
+/* Motion moves the segmented indicator (Segmented.tsx), so its CSS transition stays off. */
+.seg .ind {
+	transition: none;
+}
+
+/* Overlap: Motion animates the layers, so the stack's own transitions stay off. */
+.overlap-layer {
+	transition: none;
+	min-width: 0;
+}
+
+/* Height 0 until the body reports the height of its content, which it does on every resize. */
+.body-frame {
+	display: block;
+	width: 100%;
+	height: 0;
+	border: 0;
+}
+
+.status-line {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.paragraphs {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6em;
+	white-space: pre-line;
+}
+
+.summary {
+	display: flex;
+	gap: var(--space-3);
+	padding: 14px var(--space-4);
+}
+.summary > .i {
+	margin-top: 3px;
+}
+.summary-text {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	line-height: 1.55;
+}
+
+.agent-draft {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+	font-size: 14.5px;
+	line-height: 1.6;
+}
+.agent-draft .actions {
+	display: flex;
+	gap: var(--space-2);
+}
+.agent-draft .fillbtn {
+	min-width: 132px;
+}
+
+.invitation {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-4);
+}
+.invitation-what {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.invitation-title {
+	font-size: 15px;
+	font-weight: 500;
+}
+.invitation-answer {
+	max-width: 300px;
+}
+/* the calendar's sidebar card, as drawn */
+.invitation-card {
+	gap: 6px;
+	padding: 14px;
+}
+.invitation-buttons {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+.invitation-buttons.end {
+	justify-content: flex-end;
+}
+/* the phone sheet: what it is, then three large answers */
+.invitation-sheet {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding-bottom: 20px;
+}
+.invitation-sheet .invitation-what {
+	gap: 4px;
+}
+.invitation-large {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-2);
+	animation-delay: 60ms;
+}
+.invitation-large .btn {
+	padding: 0 8px;
+}
+
+/* The error boundary's message. */
+.failure {
+	display: grid;
+	place-content: center;
+	gap: var(--space-2);
+	height: 100dvh;
+	padding: var(--space-6);
+	text-align: center;
+}
+
+.strong {
+	font-weight: 500;
+}
+
+/* Rows: the positioned parent Motion pops leaving rows out into. */
+.rows {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Two lines of text, the second smaller: a name over its detail. */
+.two-line {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.38;
+}
+
+/* The selected row's highlight (Selection.tsx), behind the row's content. */
+.selectable {
+	position: relative;
+	isolation: isolate;
+}
+.selection-mark {
+	top: 0;
+	bottom: 0;
+	z-index: -1;
+	transition: none;
+}
+
+/* A setting's line (Lines.tsx): what it is, then its control. */
+.setting-line {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-4);
+	min-height: 54px;
+}
+.setting-what {
+	min-width: 180px;
+}
+.perm-seg {
+	width: 228px;
+}
+.perm-seg.two {
+	width: 152px;
+}
+.perm-warn {
+	color: var(--warn);
+}
+.frame-phone .setting-line:has(.perm-seg) {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--space-2);
+	padding: var(--space-2) 0;
+}
+.frame-phone .perm-seg {
+	width: auto;
+}
+
+/* The list and reading pane of the inbox and Quarantine (MailList.tsx). */
+.list-pane {
+	width: 420px;
+	flex: none;
+}
+[data-layout="list"] .list-pane {
+	flex: 1;
+	width: auto;
+}
+.list-head {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: 14px 14px var(--space-2);
+}
+.list-title {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.list-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: 0 6px var(--space-2);
+}
+.list-row {
+	min-height: var(--row-min);
+	align-content: center;
+}
+.row-dot {
+	margin-top: 6px;
+}
+.row-main {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+	text-align: left;
+}
+.row-from {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-width: 0;
+	font-weight: 500;
+}
+.row-from .unread {
+	font-weight: 600;
+}
+.row-time {
+	white-space: nowrap;
+}
+.read-pane {
+	flex: 1;
+}
+.read-bar {
+	height: 52px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: 0 10px 0 22px;
+}
+.read-scroll {
+	flex: 1;
+	min-height: 0;
+}
+.read-stack {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: var(--space-2) 40px 40px;
+}
+.mail-header {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+.mail-from {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.sender {
+	font-weight: 500;
+}
+.read-article {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+/* A message box with its controls under it (Composer.tsx). */
+.composer {
+	border-radius: var(--radius-2xl);
+	padding: var(--space-3) 10px var(--space-2) 14px;
+}
+.composer textarea {
+	display: block;
+	width: 100%;
+	height: 44px;
+	font-size: 14.5px;
+	line-height: 1.5;
+}
+.composer-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: var(--space-1);
+}
+
+/* A listbox's focus ring sits inside it, where the scroll container does not clip it. */
+[role="listbox"]:focus-visible {
+	outline-offset: -2px;
+}

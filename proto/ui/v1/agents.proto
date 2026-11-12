@@ -1,0 +1,322 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// The agents, the selected agent (Intent.select_agent) and the approval queue.
+message AgentsView {
+  repeated AgentRow system_agents = 1;
+  repeated AgentRow user_agents = 2;
+  oneof detail {
+    AgentDetail agent = 3;
+    NoAgentSelected none = 4;
+  }
+  oneof queue {
+    ApprovalQueue waiting = 5;
+    QueueClear clear = 6;
+  }
+  // The panes a narrow layout shows one at a time, one of them current (Intent.select_agents_pane).
+  // A wide layout shows both and ignores which is current. Selecting the approvals pane also leaves
+  // a chat for the agent's activity, so a chat's link to its approval leaves the phone's chat.
+  repeated AgentsPaneTab panes = 7;
+}
+
+enum AgentsPane {
+  AGENTS_PANE_UNSPECIFIED = 0;
+  // The agents and the selected agent.
+  AGENTS_PANE_AGENTS = 1;
+  // The approval queue.
+  AGENTS_PANE_APPROVALS = 2;
+}
+
+message AgentsPaneTab {
+  AgentsPane pane = 1;
+  // "Running", "Approvals · 4"
+  string label = 2;
+  bool current = 3;
+}
+
+message AgentRow {
+  string id = 1;
+  string name = 2;
+  AgentStatus status = 3;
+  // When it runs next: "On every new mail", "Weekdays 9:00 · 1 waiting"
+  string next = 4;
+  // The last run: "9:45 · Sorted 6 · flagged 1"
+  string last_run = 5;
+  bool selected = 6;
+}
+
+message NoAgentSelected {}
+
+message AgentDetail {
+  reserved 3, 4;
+  string id = 1;
+  string name = 2;
+  // Also the value of the active switch: on unless deactivated.
+  AgentStatus status = 5;
+  oneof kind {
+    SystemAgent system = 6;
+    UserAgent user = 7;
+  }
+  repeated Stat stats = 8;
+  // Newest first, each with all its steps.
+  repeated AgentRun runs = 9;
+  // The line under the name: "On every new mail · Claude Sonnet", "Answers when you ask · Claude Sonnet"
+  string subtitle = 10;
+  // Assistant and the agents the user made can be written to; the other system agents cannot, and
+  // show their activity alone, with no pane list.
+  oneof chat {
+    AgentChat available = 11;
+    NoChat none = 12;
+  }
+}
+
+message NoChat {}
+
+// The two panes of an agent that can chat, one of them current (Intent.select_agent_detail_pane).
+// Assistant opens on chat, the agents the user made on activity; selecting another agent applies
+// that agent's default.
+//
+// Desktop: the detail shows the panes as tabs, activity being the rest of AgentDetail.
+// Phone: activity is the agent's expanded row in the list; chat covers the whole screen with a back
+// affordance (Intent.back), which returns to activity. The chat is also a web path,
+// "/u/0/agents/<agent id>/chat", so the browser's back button does the same.
+message AgentChat {
+  repeated AgentDetailPaneTab panes = 1;
+  oneof availability {
+    ChatReady ready = 2;
+    ChatBusy busy = 3;
+    ChatOff off = 4;
+    ChatDeactivated deactivated = 5;
+  }
+  oneof conversation {
+    ChatTurns turns = 6;
+    ChatEmpty empty = 7;
+  }
+}
+
+enum AgentDetailPane {
+  AGENT_DETAIL_PANE_UNSPECIFIED = 0;
+  // What the agent did: stats, runs and the instructions.
+  AGENT_DETAIL_PANE_ACTIVITY = 1;
+  AGENT_DETAIL_PANE_CHAT = 2;
+}
+
+message AgentDetailPaneTab {
+  AgentDetailPane pane = 1;
+  // "Activity", "Chat"
+  string label = 2;
+  bool current = 3;
+}
+
+// The composer takes a message. Sending is a later roadmap task: the composer renders and nothing
+// is sent.
+message ChatReady {
+  // "Ask Assistant about your mail and calendar", "Message Receipts clerk"
+  string placeholder = 1;
+}
+
+// A turn is unfinished (running, or waiting for an approval): one turn at a time.
+message ChatBusy {
+  // "Assistant is waiting for your approval", "Job application tracker is answering"
+  string text = 1;
+}
+
+// No key for the agent's model: chat is off. The action opens the Models settings section
+// (Intent.open_settings with SETTINGS_SECTION_MODELS).
+message ChatOff {
+  // "Chat is off until you add an OpenAI key"
+  string text = 1;
+  // "Add a key"
+  string action = 2;
+}
+
+// The agent is deactivated; its active switch turns it back on.
+message ChatDeactivated {
+  // "Receipts clerk is off. Turn it on to chat"
+  string text = 1;
+}
+
+// Oldest first.
+message ChatTurns {
+  repeated ChatTurn turns = 1;
+}
+
+message ChatEmpty {
+  // "Ask Receipts clerk about its work, or give it a one-off task"
+  string hint = 1;
+}
+
+// One message from the user and what became of it.
+message ChatTurn {
+  string id = 1;
+  // "When and where is my COSC 4456 exam?"
+  string message = 2;
+  // "8:20", "Mon"
+  string time = 3;
+  oneof state {
+    TurnRunning running = 4;
+    TurnWaiting waiting = 5;
+    TurnAnswered answered = 6;
+    TurnFailed failed = 7;
+    TurnStopped stopped = 8;
+  }
+}
+
+message TurnRunning {
+  // "Reading your mail"
+  string label = 1;
+}
+
+// An action resolved to Ask: the turn is parked until the approval is answered. The item is in the
+// approval queue (AgentsPane.AGENTS_PANE_APPROVALS on a narrow layout).
+message TurnWaiting {
+  // The ApprovalItem's id and title: "a-assistant-mira", "Reply to Mira"
+  string approval_id = 1;
+  string approval_title = 2;
+  // "Waiting for your approval"
+  string label = 3;
+}
+
+message TurnAnswered {
+  repeated string paragraphs = 1;
+  // The threads and events the answer is about.
+  repeated ChatReference references = 2;
+}
+
+message ChatReference {
+  // "Slides for Thursday, can you take section 3?", "COSC 4456 exam · Thu 14:00"
+  string label = 1;
+  oneof target {
+    // Intent.open_thread.
+    ThreadReference thread = 2;
+    // Intent.select_event, which opens the calendar on it.
+    EventReference event = 3;
+  }
+}
+
+message ThreadReference {
+  string thread_id = 1;
+}
+
+message EventReference {
+  string event_id = 1;
+}
+
+message TurnFailed {
+  // "Anthropic did not answer in time. Nothing was changed"
+  string reason = 1;
+}
+
+// It reached a safety cap or the token budget.
+message TurnStopped {
+  // "Stopped at the 200 mails a turn may read. Ask about a shorter span"
+  string text = 1;
+}
+
+// Built in: instructions shown read-only, deactivated but never deleted.
+message SystemAgent {
+  string built_in_instructions = 1;
+  // Appended after the built-in ones; may be empty.
+  string your_instructions = 2;
+  oneof schedule {
+    EventSchedule on_event = 3;
+    TimesSchedule at_times = 4;
+    MessageSchedule on_message = 8;
+  }
+  repeated Permission permissions = 5;
+  // What it does without a model key.
+  string key_note = 6;
+  // The label of the user's instructions: "Your instructions for Gatekeeper"
+  string your_instructions_label = 7;
+}
+
+// It wakes on something happening.
+message EventSchedule {
+  // "On every new mail, after your rules"
+  string when = 1;
+}
+
+// It has no trigger and no schedule to edit: it wakes only when the user writes to it (Assistant).
+message MessageSchedule {
+  // "Only when you write to it"
+  string when = 1;
+}
+
+// It runs at set times, which the user can add to.
+message TimesSchedule {
+  // "Daily at"
+  string when = 1;
+  // "7:30", "18:00"
+  repeated string times = 2;
+}
+
+// Made by the user: editable and deletable.
+message UserAgent {
+  string instructions = 1;
+}
+
+message AgentRun {
+  string id = 1;
+  // "9:45", "Mon"
+  string time = 2;
+  RunOutcome outcome = 3;
+  string summary = 4;
+  // "2 s"
+  string duration = 5;
+  repeated RunStep steps = 6;
+}
+
+message RunOutcome {
+  oneof state {
+    RunDone done = 1;
+    RunWaiting waiting = 2;
+  }
+}
+
+message RunDone {}
+
+// It left something waiting for the user.
+message RunWaiting {}
+
+message RunStep {
+  // "Flagged"
+  string verb = 1;
+  // "Prof. Okafor: exam room change"
+  string what = 2;
+}
+
+message ApprovalQueue {
+  // "4 items"
+  string count = 1;
+  repeated ApprovalItem items = 2;
+}
+
+// Nothing waits: all clear.
+message QueueClear {}
+
+message ApprovalItem {
+  string id = 1;
+  // The agent's name.
+  string agent = 2;
+  string time = 3;
+  string title = 4;
+  string detail = 5;
+  // Why it asks: "Gmail accounts always ask before sending for now"
+  string reason = 6;
+  oneof action {
+    SendApproval send = 7;
+    UnsubscribeApproval unsubscribe = 8;
+  }
+  ApprovalState state = 9;
+}
+
+// Approve and send, Edit, Decline. Edit opens the thread (Intent.open_thread).
+message SendApproval {
+  string thread_id = 1;
+}
+
+// Unsubscribe or Keep.
+message UnsubscribeApproval {}

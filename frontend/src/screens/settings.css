@@ -1,0 +1,210 @@
+.settings {
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	gap: var(--space-2);
+}
+.settings-nav {
+	width: 240px;
+	flex: none;
+	padding: var(--space-4) var(--space-2);
+}
+.settings-nav-title {
+	padding: 0 10px 12px;
+}
+.settings-nav-item {
+	position: relative;
+	width: 100%;
+	height: 38px;
+	display: flex;
+	align-items: center;
+	padding: 0 12px;
+	border-radius: 9px;
+	font-size: 14px;
+	color: var(--muted);
+}
+.settings-nav-item.on {
+	color: var(--text);
+}
+.settings-main {
+	flex: 1;
+	min-height: 0;
+	display: grid;
+	grid-template-rows: minmax(0, 1fr);
+}
+.settings-stack {
+	grid-template-rows: minmax(0, 1fr);
+	min-height: 0;
+}
+.settings-stack > .overlap-layer {
+	min-height: 0;
+}
+.settings-scroll {
+	height: 100%;
+}
+.settings-page {
+	max-width: 680px;
+	margin: 0 auto;
+	padding: 32px 32px 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+.settings-lede {
+	margin-top: -12px;
+}
+.settings-list {
+	display: flex;
+	flex-direction: column;
+}
+.settings-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.settings-start {
+	align-self: flex-start;
+}
+.settings-end {
+	align-self: flex-end;
+}
+.settings-stack-gap {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.settings-account {
+	padding: var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.settings-account-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.settings-signature {
+	padding: 10px 12px;
+	white-space: pre-line;
+}
+.settings-rule {
+	padding: 14px var(--space-4);
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+}
+.settings-blocked {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.settings-blocked-row {
+	min-height: 52px;
+	gap: 14px;
+}
+.settings-key {
+	padding: 12px 12px 12px var(--space-4);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 64px;
+}
+.settings-key-logo {
+	margin: 0 3px;
+}
+.settings-ok {
+	color: var(--ok);
+}
+.settings-key-field {
+	margin-top: 4px;
+}
+.settings-key-field input {
+	height: 32px;
+	padding: 0 10px;
+	border-radius: 9px;
+	background: var(--overlay);
+	font-size: 13px;
+}
+.settings-notice {
+	padding: 14px var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.settings-task {
+	min-height: 56px;
+	gap: 12px;
+	padding: 0 var(--space-4);
+	background: var(--raised);
+	border-radius: var(--radius-lg);
+	text-align: left;
+}
+.settings-budget {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.settings-budget-field input {
+	width: 160px;
+	height: 40px;
+	padding: 0 12px;
+	border-radius: 10px;
+	background: var(--raised);
+}
+.settings-appearance-seg {
+	width: 320px;
+}
+.settings-export {
+	min-width: 120px;
+}
+.settings-danger {
+	color: var(--bad);
+}
+
+/* phone: one column, the section list collapsed into a menu on top */
+.settings-phone {
+	flex-direction: column;
+	gap: 0;
+}
+.settings-menu {
+	/* the connection status sits in the top right corner */
+	padding: var(--space-3) 84px var(--space-2) var(--space-4);
+}
+.settings-menu-trigger {
+	width: 100%;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 0 var(--space-3);
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+	text-align: left;
+}
+.settings-menu .menu-row.on {
+	background: var(--hover);
+}
+.settings-phone .settings-main {
+	background: none;
+	border-radius: 0;
+}
+.settings-phone .settings-page {
+	padding: var(--space-4) var(--space-4) 32px;
+	gap: 20px;
+}
+.settings-phone .settings-appearance-seg {
+	width: 100%;
+}
+.settings-phone .settings-budget-field input {
+	width: 120px;
+}
+.settings-accounts {
+	gap: var(--space-5);
+}
+.settings-head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}

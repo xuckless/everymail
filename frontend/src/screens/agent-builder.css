@@ -1,0 +1,287 @@
+/* wide */
+.builder-main {
+	flex: 1;
+	position: relative;
+}
+.builder-bar {
+	height: 56px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 0 14px 0 var(--space-3);
+}
+.cancel {
+	color: var(--text);
+}
+.create {
+	min-width: 128px;
+}
+.builder-scroll {
+	flex: 1;
+	min-height: 0;
+}
+.builder-form {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: var(--space-3) 36px 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+}
+.builder-field {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.builder-field.tight {
+	gap: 6px;
+}
+.builder-form .field input {
+	background: var(--raised);
+	font-size: 16px;
+	font-weight: 500;
+}
+.builder-text {
+	padding: 14px var(--space-4);
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+	font-size: 15px;
+	line-height: 1.65;
+}
+.trigger-rows {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.trigger {
+	padding: 10px var(--space-2) 12px var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.trigger-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.trigger-name {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.35;
+}
+.trigger-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.filter-chip,
+.schedule-chip {
+	background: var(--overlay);
+	color: var(--text);
+}
+.schedule-line {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+.schedule-pop {
+	width: 220px;
+}
+.add-trigger {
+	align-self: flex-start;
+}
+.add-button {
+	gap: var(--space-2);
+}
+.add-pop {
+	width: 300px;
+}
+.pop-label {
+	display: block;
+	padding: 6px 10px 2px;
+}
+.pop-label.second {
+	padding-top: var(--space-2);
+}
+.builder-account {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: 44px;
+	padding: 0 var(--space-1);
+}
+.permissions-intro {
+	padding-bottom: 6px;
+}
+
+/* the dry run */
+.builder-test {
+	width: 400px;
+	flex: none;
+}
+.test-head {
+	padding: var(--space-4) var(--space-4) var(--space-2);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+.test-title {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.test-model {
+	color: var(--text);
+	gap: var(--space-2);
+}
+.test-button {
+	gap: var(--space-2);
+}
+.test-scroll {
+	flex: 1;
+	min-height: 0;
+	padding: var(--space-1) var(--space-3) var(--space-4);
+}
+.dry-note {
+	padding: 40px var(--space-3);
+	text-align: center;
+}
+.dry-reading {
+	padding: var(--space-3);
+}
+.dry-results {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+.dry-result {
+	padding: 10px;
+	border-radius: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.dry-line {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.dry-action {
+	padding-left: 15px;
+}
+.dry-wait {
+	color: var(--warn);
+}
+.dry-done {
+	color: var(--ok);
+}
+.dry-idle {
+	color: var(--subtle);
+}
+
+/* phone */
+.builder-phone {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.builder-phone-head {
+	padding: 48px var(--space-2) var(--space-2);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.builder-phone-bar {
+	display: flex;
+	align-items: center;
+}
+.builder-phone-title {
+	text-align: center;
+	margin-right: 44px;
+}
+.builder-progress {
+	margin: 0 var(--space-3);
+}
+.builder-phone-stack {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.builder-phone-stack > .overlap-layer {
+	min-height: 0;
+	height: 100%;
+}
+.builder-phone-step {
+	height: 100%;
+	min-height: 0;
+	padding: var(--space-4) var(--space-4) 120px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.builder-phone-step .builder-text {
+	font-size: 16px;
+	line-height: 1.6;
+	border-radius: 14px;
+}
+.builder-phone-step .instructions-label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+.idea-label {
+	padding-top: 6px;
+}
+.idea {
+	background: var(--raised);
+}
+.pick-any {
+	margin-top: -6px;
+}
+.trigger-list {
+	padding: 4px;
+}
+.trigger-item {
+	display: flex;
+	flex-direction: column;
+}
+.filter-summary {
+	padding: 0 var(--space-3) 10px;
+}
+.schedule-list {
+	position: relative;
+	padding: 6px;
+}
+/* on the tile, the highlight is one tone up */
+.schedule-list .sel-bar.selection-mark {
+	background: var(--overlay);
+}
+.summary-lines {
+	padding: 6px;
+}
+.summary-line {
+	display: flex;
+	gap: var(--space-3);
+	padding: var(--space-3);
+}
+.summary-label {
+	width: 88px;
+	flex: none;
+}
+.builder-phone-foot {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: var(--space-3) var(--space-4) 30px;
+	background: var(--bg);
+}
+.builder-phone-foot .btn {
+	width: 100%;
+}

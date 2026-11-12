@@ -1,0 +1,23 @@
+{
+	"name": "@everymail/site",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"gen": "buf generate ../proto --path ../proto/api/v1/waitlist.proto",
+		"dev": "ASTRO_TELEMETRY_DISABLED=1 bun --bun astro dev",
+		"build": "ASTRO_TELEMETRY_DISABLED=1 bun --bun astro build",
+		"typecheck": "ASTRO_TELEMETRY_DISABLED=1 bun --bun astro check",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@bufbuild/protobuf": "^2.17.0",
+		"@everymail/design": "workspace:*",
+		"@fontsource/inter": "^5.3.0",
+		"astro": "^7.4.11"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
+		"@types/bun": "^1.4.4",
+		"typescript": "^6.0.3"
+	}
+}

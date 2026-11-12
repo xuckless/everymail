@@ -1,0 +1,209 @@
+syntax = "proto3";
+
+package ui.v1;
+
+// Types shared by several screens.
+//
+// Every enum in ui.v1 starts with an UNSPECIFIED zero value. It is a decode error, never a value,
+// just as an unset oneof is a decode error, never a state.
+// A `bool` in ui.v1 is one fact the Frontend prints as it is (a dot, a switch, a checked option);
+// anything with more than two states, or with data per state, is a oneof.
+// Every string is text the engine formatted; an empty string prints as nothing.
+
+// Mail providers. The Frontend switches on them to pick a logo.
+enum MailProvider {
+  MAIL_PROVIDER_UNSPECIFIED = 0;
+  MAIL_PROVIDER_GMAIL = 1;
+  MAIL_PROVIDER_OUTLOOK = 2;
+  MAIL_PROVIDER_ICLOUD = 3;
+  MAIL_PROVIDER_YAHOO = 4;
+  MAIL_PROVIDER_FASTMAIL = 5;
+  MAIL_PROVIDER_OTHER_IMAP = 6;
+}
+
+// Calendar providers. The Frontend switches on them to pick a logo.
+enum CalendarProvider {
+  CALENDAR_PROVIDER_UNSPECIFIED = 0;
+  CALENDAR_PROVIDER_GOOGLE_CALENDAR = 1;
+  CALENDAR_PROVIDER_OUTLOOK_CALENDAR = 2;
+  CALENDAR_PROVIDER_CALDAV = 3;
+}
+
+// Model providers whose keys the user brings. The Frontend switches on them to pick a logo and name.
+enum ModelProvider {
+  MODEL_PROVIDER_UNSPECIFIED = 0;
+  MODEL_PROVIDER_ANTHROPIC = 1;
+  MODEL_PROVIDER_OPENAI = 2;
+  MODEL_PROVIDER_GOOGLE_GEMINI = 3;
+  MODEL_PROVIDER_OPENROUTER = 4;
+}
+
+// Providers the user signs in with. The Frontend switches on them to pick a logo.
+enum SignInProvider {
+  SIGN_IN_PROVIDER_UNSPECIFIED = 0;
+  SIGN_IN_PROVIDER_GOOGLE = 1;
+  SIGN_IN_PROVIDER_MICROSOFT = 2;
+}
+
+enum Theme {
+  THEME_UNSPECIFIED = 0;
+  THEME_SYSTEM = 1;
+  THEME_DARK = 2;
+  THEME_LIGHT = 3;
+}
+
+// How much space rows and controls take. The Frontend applies it through CSS variables.
+enum Density {
+  DENSITY_UNSPECIFIED = 0;
+  DENSITY_COMPACT = 1;
+  DENSITY_COMFORTABLE = 2;
+  DENSITY_ROOMY = 3;
+}
+
+// Off hides an action from the agent, Ask parks it in the approval queue, Auto runs it.
+enum PermissionLevel {
+  PERMISSION_LEVEL_UNSPECIFIED = 0;
+  PERMISSION_LEVEL_OFF = 1;
+  PERMISSION_LEVEL_ASK = 2;
+  PERMISSION_LEVEL_AUTO = 3;
+}
+
+// A model, as on a model chip.
+message Model {
+  string name = 1;
+  ModelProvider provider = 2;
+}
+
+// A figure with its caption, such as "21" over "sorted today".
+message Stat {
+  string value = 1;
+  string label = 2;
+}
+
+// One action an agent may take, and its level.
+message Permission {
+  string action = 1;
+  // Shown under the action; may be empty. Replaced by the reason when Auto is not offered.
+  string hint = 2;
+  PermissionLevel level = 3;
+  // The levels the control offers.
+  oneof levels {
+    AllLevels all = 4;
+    AskAtMost ask_at_most = 5;
+  }
+}
+
+// Off, Ask and Auto.
+message AllLevels {}
+
+// Off and Ask only, for the reason given, such as Send on a Gmail account until Google's review is done.
+message AskAtMost {
+  string reason = 1;
+}
+
+message AgentStatus {
+  oneof state {
+    AgentRunning running = 1;
+    AgentIdle idle = 2;
+    AgentWaiting waiting = 3;
+    AgentDeactivated deactivated = 4;
+  }
+}
+
+message AgentRunning {}
+
+// Its last run finished.
+message AgentIdle {}
+
+// Something it did waits for the user's approval.
+message AgentWaiting {}
+
+// Switched off by the user.
+message AgentDeactivated {}
+
+message AccountStatus {
+  oneof state {
+    AccountSynced synced = 1;
+    AccountSignInExpired sign_in_expired = 2;
+  }
+}
+
+message AccountSynced {
+  // "Synced 1 min ago"
+  string label = 1;
+}
+
+message AccountSignInExpired {
+  // "App password expired"
+  string label = 1;
+}
+
+// Scribe's summary of a thread.
+message Summary {
+  oneof state {
+    SummaryReady ready = 1;
+    SummaryOff off = 2;
+  }
+}
+
+message SummaryReady {
+  string text = 1;
+}
+
+// Scribe is off because no model key is set.
+message SummaryOff {}
+
+// A reply an agent drafted that waits for approval, shown in the thread it answers.
+message AgentDraft {
+  // The approval item this draft belongs to, as in AgentsView.
+  string approval_id = 1;
+  // "Draft by Job application tracker · waiting for you"
+  string status = 2;
+  repeated string paragraphs = 3;
+  ApprovalState state = 4;
+}
+
+message ApprovalState {
+  oneof state {
+    ApprovalWaiting waiting = 1;
+    ApprovalDone done = 2;
+  }
+}
+
+message ApprovalWaiting {}
+
+// Approved and carried out.
+message ApprovalDone {}
+
+// A calendar invitation as shown in a thread, the calendar's sidebar and its popover.
+message Invitation {
+  string event_id = 1;
+  // "Mira invited you"
+  string invited_by = 2;
+  string title = 3;
+  // "Thu, Nov 12 · 9:00–10:00 · FA-110"
+  string when = 4;
+  // "Mira, you and 2 others · nothing else on your calendars then"
+  string details = 5;
+  // "Waiting for your answer · Laurentian calendar"
+  string status = 6;
+  InvitationAnswer answer = 7;
+}
+
+message InvitationAnswer {
+  oneof state {
+    InvitationUnanswered unanswered = 1;
+    InvitationAccepted accepted = 2;
+    InvitationTentative tentative = 3;
+    InvitationDeclined declined = 4;
+  }
+}
+
+message InvitationUnanswered {}
+
+message InvitationAccepted {}
+
+// Answered Maybe.
+message InvitationTentative {}
+
+message InvitationDeclined {}

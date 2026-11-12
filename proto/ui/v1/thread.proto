@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// One thread with the reply panel beside it. Back (Intent.back) returns to the inbox.
+message ThreadView {
+  string thread_id = 1;
+  string subject = 2;
+  // "Laurentian · 4 messages"
+  string context = 3;
+  Summary summary = 4;
+  repeated ThreadMessage messages = 5;
+  // Agent drafts answering this thread; usually none.
+  repeated AgentDraft drafts = 6;
+  ReplyPanel reply = 7;
+}
+
+message ThreadMessage {
+  reserved 2;
+  string message_id = 1;
+  // "Mira", "You"
+  string from = 7;
+  // One line from the message, shown on its header.
+  string preview = 3;
+  // "Mon 16:12", "8:50"
+  string time = 4;
+  // Intent.expand_message and Intent.collapse_message.
+  oneof display {
+    MessageCollapsed collapsed = 5;
+    MessageExpanded expanded = 6;
+  }
+}
+
+message MessageCollapsed {}
+
+message MessageExpanded {
+  // The message body, a complete HTML document served by the engine, for a sandboxed iframe with
+  // sandbox="allow-scripts" and nothing else. Desktop: "body://localhost/<message id>"
+  // ("http://body.localhost/<message id>" on Windows). Web: "/body/<message id>", answered by the
+  // Frontend's Service Worker. The body's one script posts its height to the parent as a number of
+  // CSS pixels, on load and on every resize.
+  string body_url = 1;
+  // Invitations this message carries; usually none.
+  repeated Invitation invitations = 2;
+}
+
+// Reply with AI.
+message ReplyPanel {
+  oneof state {
+    ComposeOff off = 1;
+    ComposeReady ready = 2;
+  }
+}
+
+// No model key is set: AI compose is off until the user adds one.
+message ComposeOff {}
+
+message ComposeReady {
+  // The model on the chip.
+  Model model = 1;
+  // The model menu.
+  repeated ModelChoice models = 2;
+  // Scribe's suggestions.
+  repeated string quick_replies = 3;
+  repeated ToneChoice tones = 4;
+  oneof generation {
+    GenerationEmpty empty = 5;
+    GenerationWriting writing = 6;
+    GenerationDraft draft = 7;
+  }
+  // The phone sheet's title: "Reply to Mira"
+  string title = 8;
+}
+
+message ModelChoice {
+  Model model = 1;
+  bool selected = 2;
+  oneof availability {
+    ModelReady ready = 3;
+    ModelNeedsKey needs_key = 4;
+  }
+}
+
+message ModelReady {
+  // "Anthropic", "Gemini"
+  string provider_name = 1;
+}
+
+// The provider's key is not set.
+message ModelNeedsKey {
+  // "Add OpenAI key"
+  string label = 1;
+}
+
+message ToneChoice {
+  string label = 1;
+  bool selected = 2;
+}
+
+// Nothing written yet.
+message GenerationEmpty {
+  // "Pick a quick reply or say what you want, and Claude Sonnet writes it in your voice"
+  string hint = 1;
+}
+
+message GenerationWriting {
+  // "Writing with Claude Sonnet"
+  string label = 1;
+}
+
+message GenerationDraft {
+  // "To Mira · from ali@laurentian.ca"
+  string addressing = 1;
+  repeated string paragraphs = 2;
+}

@@ -1,0 +1,989 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+*,
+::before,
+::after {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font:
+		14px / 1.5 "Geist Variable",
+		var(--font-sans);
+	letter-spacing: 0;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+:where(h1, h2, p) {
+	margin: 0;
+}
+button {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	cursor: pointer;
+	text-align: inherit;
+	-webkit-tap-highlight-color: transparent;
+}
+a {
+	color: inherit;
+	text-decoration: none;
+}
+input,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: 0;
+	outline: none;
+	resize: none;
+	padding: 0;
+	margin: 0;
+}
+::placeholder {
+	color: var(--subtle);
+}
+:focus-visible {
+	outline: 2px solid var(--cyan);
+	outline-offset: 2px;
+	border-radius: var(--radius-sm);
+}
+::selection {
+	background: color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.scroll {
+	overflow: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-2) transparent;
+	overscroll-behavior: contain;
+}
+.noscroll {
+	scrollbar-width: none;
+}
+.noscroll::-webkit-scrollbar {
+	display: none;
+}
+
+/* type */
+.mono {
+	font-family: "Geist Mono Variable", var(--font-mono);
+	font-size: 12.5px;
+}
+.muted {
+	color: var(--muted);
+}
+.subtle {
+	color: var(--subtle);
+}
+.accent {
+	color: var(--accent-text);
+}
+.h1 {
+	font-size: 24px;
+	line-height: 1.2;
+	font-weight: 600;
+}
+.h2 {
+	font-size: 17px;
+	line-height: 1.3;
+	font-weight: 600;
+}
+.label {
+	font-size: 12px;
+	color: var(--subtle);
+	font-weight: 500;
+}
+.sm {
+	font-size: 13px;
+}
+.xs {
+	font-size: 12px;
+}
+.trunc {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	min-width: 0;
+}
+
+/* press: snap while held, ease on release, no bounce */
+.press {
+	transition:
+		transform var(--t-press) var(--ease-out),
+		background-color 160ms ease,
+		color 160ms ease,
+		opacity 160ms ease,
+		box-shadow 200ms ease;
+}
+.press:active {
+	transform: scale(0.97);
+	transition-duration: 0ms, 160ms, 160ms, 160ms, 200ms;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 var(--space-3);
+	border-radius: var(--radius-md);
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+.btn.lg {
+	height: 44px;
+	padding: 0 18px;
+	border-radius: var(--radius-lg);
+	font-size: 15px;
+}
+.btn.ghost:hover {
+	background: var(--hover);
+}
+.btn.soft {
+	background: var(--raised);
+}
+.btn.soft:hover {
+	background: var(--overlay);
+}
+.btn.primary {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+.btn.primary:hover {
+	background: #6a49d6;
+}
+.icon-btn {
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-md);
+	color: var(--muted);
+	flex: none;
+}
+.icon-btn:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+.icon-btn.touch {
+	width: 44px;
+	height: 44px;
+	border-radius: var(--radius-lg);
+}
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: var(--radius-md);
+	font-size: 13px;
+	color: var(--muted);
+	white-space: nowrap;
+}
+.chip:hover {
+	background: var(--hover);
+	color: var(--text);
+}
+.chip.on {
+	background: var(--accent-bg);
+	color: var(--accent-text);
+}
+.kbd {
+	font-family: "Geist Mono Variable", var(--font-mono);
+	font-size: 11px;
+	color: var(--subtle);
+	padding: 1px 5px;
+	border-radius: 5px;
+	background: var(--raised);
+}
+svg.i {
+	width: 16px;
+	height: 16px;
+	flex: none;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 1.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+svg.i.sm {
+	width: 14px;
+	height: 14px;
+}
+svg.i.lg {
+	width: 20px;
+	height: 20px;
+}
+
+/* glyph tiles for accounts and agents */
+.agent {
+	display: inline-grid;
+	place-items: center;
+	width: 18px;
+	height: 18px;
+	border-radius: var(--radius-sm);
+	font-size: 10px;
+	font-weight: 600;
+	flex: none;
+	color: #fff;
+}
+.avatar {
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-full);
+	font-size: 13px;
+	font-weight: 600;
+	flex: none;
+	color: #fff;
+}
+
+/* status dots */
+.dot {
+	width: 7px;
+	height: 7px;
+	border-radius: var(--radius-full);
+	flex: none;
+	background: var(--subtle);
+}
+.dot.run {
+	background: var(--cyan);
+	animation: breathe 1.8s ease-in-out infinite;
+}
+.dot.wait {
+	background: var(--warn);
+}
+.dot.done {
+	background: var(--ok);
+}
+.dot.err {
+	background: var(--bad);
+}
+.dot.unread {
+	background: var(--accent);
+}
+.dot.idle {
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px var(--subtle);
+}
+@keyframes breathe {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+
+/* popovers */
+.pop {
+	position: absolute;
+	z-index: 60;
+	background: var(--overlay);
+	border-radius: var(--radius-xl);
+	box-shadow: var(--shadow-pop);
+	padding: 6px;
+}
+.pop.in {
+	animation: popIn var(--t-in) var(--ease-out) both;
+}
+.pop.out {
+	animation: popOut var(--t-out) var(--ease-exit) both;
+	pointer-events: none;
+}
+@keyframes popIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@keyframes popOut {
+	from {
+		opacity: 1;
+		transform: none;
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+}
+.menu-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	min-height: var(--menu-row-min);
+	padding: 6px 10px;
+	border-radius: var(--radius-md);
+	font-size: 13.5px;
+}
+.menu-row:hover {
+	background: var(--hover);
+}
+.menu-row.touch {
+	min-height: 48px;
+	font-size: 15px;
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-lg);
+}
+
+/* stagger and settle: --i is the row index */
+.row-in {
+	animation: rowIn 260ms var(--ease-out) both;
+}
+@keyframes rowIn {
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.settle {
+	animation: settle 340ms var(--ease-out) both;
+}
+@keyframes settle {
+	from {
+		opacity: 0;
+		transform: translateY(3px);
+		filter: blur(3px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+		filter: none;
+	}
+}
+.fade-in {
+	animation: fadeIn 220ms var(--ease-out) both;
+}
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+.row-out {
+	animation: rowOut 200ms var(--ease-exit) both;
+	pointer-events: none;
+}
+@keyframes rowOut {
+	to {
+		opacity: 0;
+		transform: translateX(-12px);
+		filter: blur(2px);
+	}
+}
+/* After the entrance classes, whose animation shorthand would otherwise reset the delay. */
+.stagger {
+	animation-delay: calc(var(--i, 0) * var(--t-stagger));
+}
+
+/* overlap old and new: .stack for text, .swap for icons; .hide marks the one leaving */
+.stack {
+	display: grid;
+}
+.stack > * {
+	grid-area: 1 / 1;
+	transition:
+		opacity 240ms var(--ease-in-out),
+		transform 240ms var(--ease-in-out),
+		filter 240ms var(--ease-in-out);
+}
+.stack > .hide {
+	opacity: 0;
+	transform: translateY(4px);
+	filter: blur(2px);
+	pointer-events: none;
+	visibility: hidden;
+	transition:
+		opacity 240ms var(--ease-in-out),
+		transform 240ms var(--ease-in-out),
+		filter 240ms var(--ease-in-out),
+		visibility 0s 240ms;
+}
+.swap {
+	display: inline-grid;
+	place-items: center;
+}
+.swap > * {
+	grid-area: 1 / 1;
+	transition:
+		opacity 200ms var(--ease-out),
+		filter 200ms var(--ease-out),
+		transform 200ms var(--ease-out);
+}
+.swap > .hide {
+	opacity: 0;
+	filter: blur(4px);
+	transform: scale(0.5);
+}
+
+/* segmented control, selection bar, underline */
+.seg {
+	position: relative;
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: 1fr;
+	padding: 3px;
+	border-radius: 11px;
+	background: var(--raised);
+}
+.seg .ind {
+	position: absolute;
+	top: 3px;
+	bottom: 3px;
+	left: 3px;
+	border-radius: 8px;
+	background: var(--overlay);
+	box-shadow: var(--shadow-soft);
+	transition: transform var(--t-move) var(--ease-in-out);
+}
+.seg .opt {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--subtle);
+	transition: color 200ms ease;
+	white-space: nowrap;
+}
+.seg .opt.on {
+	color: var(--text);
+}
+.seg.touch .opt {
+	height: 34px;
+	font-size: 14px;
+}
+.sel-bar {
+	position: absolute;
+	left: 0;
+	right: 0;
+	border-radius: 10px;
+	background: var(--hover);
+	transition:
+		transform 260ms var(--ease-in-out),
+		height 260ms var(--ease-in-out);
+	pointer-events: none;
+}
+.sel-bar.strong {
+	background: var(--raised);
+}
+.under {
+	position: absolute;
+	bottom: -1px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--text);
+	transition:
+		transform var(--t-move) var(--ease-in-out),
+		width var(--t-move) var(--ease-in-out);
+}
+
+/* switch: the knob stretches 12% while it moves */
+.switch {
+	position: relative;
+	width: 44px;
+	height: 26px;
+	border-radius: var(--radius-full);
+	background: var(--line-2);
+	flex: none;
+	transition: background-color 220ms var(--ease-in-out);
+}
+.switch .knob {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 20px;
+	height: 20px;
+	border-radius: var(--radius-full);
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	transform: translateX(0);
+}
+.switch.on {
+	background: var(--primary);
+}
+.switch.on .knob {
+	transform: translateX(18px);
+}
+.switch.anim.on .knob {
+	animation: knobR 240ms var(--ease-in-out) both;
+}
+.switch.anim.off .knob {
+	animation: knobL 240ms var(--ease-in-out) both;
+}
+@keyframes knobR {
+	0% {
+		transform: translateX(0);
+		width: 20px;
+	}
+	50% {
+		transform: translateX(7.6px);
+		width: 22.4px;
+	}
+	100% {
+		transform: translateX(18px);
+		width: 20px;
+	}
+}
+@keyframes knobL {
+	0% {
+		transform: translateX(18px);
+		width: 20px;
+	}
+	50% {
+		transform: translateX(8px);
+		width: 22.4px;
+	}
+	100% {
+		transform: translateX(0);
+		width: 20px;
+	}
+}
+
+/* masks */
+.reveal {
+	animation: reveal 300ms var(--ease-out) both;
+}
+@keyframes reveal {
+	from {
+		clip-path: inset(0 0 100% 0 round 10px);
+	}
+	to {
+		clip-path: inset(0 0 0 0 round 10px);
+	}
+}
+.reveal-x {
+	animation: revealX 420ms var(--ease-out) both;
+}
+@keyframes revealX {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+.fillbtn {
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+}
+.fillbtn .fill {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--ok);
+	clip-path: inset(0 100% 0 0);
+	transition: clip-path 300ms var(--ease-out);
+}
+.fillbtn.done .fill {
+	clip-path: inset(0 0 0 0);
+}
+.fillbtn.done {
+	color: var(--on-ok);
+}
+
+/* pulse confirms success */
+.pulse {
+	animation: pulse 700ms var(--ease-out);
+}
+@keyframes pulse {
+	0% {
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 12px transparent;
+	}
+}
+.pulse-v {
+	animation: pulseV 700ms var(--ease-out);
+}
+@keyframes pulseV {
+	0% {
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 10px transparent;
+	}
+}
+
+/* arcs: x and y run on different curves; --dx and --dy are the travel */
+.fly {
+	position: absolute;
+	z-index: 90;
+	pointer-events: none;
+	animation: flyX 560ms cubic-bezier(0.45, 0, 0.75, 0.2) forwards;
+}
+.fly > i {
+	display: block;
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-full);
+	background: var(--accent);
+	box-shadow: 0 0 0 4px var(--accent-bg);
+	animation: flyY 560ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+@keyframes flyX {
+	to {
+		transform: translateX(var(--dx));
+	}
+}
+@keyframes flyY {
+	0% {
+		transform: translateY(0) scale(1);
+	}
+	85% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(var(--dy)) scale(0.6);
+		opacity: 0;
+	}
+}
+
+/* rubber band: no tween while held */
+.band {
+	transition: transform 460ms var(--ease-out);
+}
+.band.held {
+	transition: none;
+}
+
+/* sheets, drawers */
+.scrim {
+	position: absolute;
+	inset: 0;
+	background: var(--scrim);
+	z-index: 70;
+}
+.scrim.in {
+	animation: fadeIn var(--t-sheet-in) var(--ease-out) both;
+}
+.scrim.out {
+	animation: fadeOut var(--t-sheet-out) var(--ease-exit) both;
+}
+@keyframes fadeOut {
+	to {
+		opacity: 0;
+	}
+}
+.sheet {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 80;
+}
+.sheet.in {
+	animation: sheetIn var(--t-sheet-in) var(--ease-out) both;
+}
+.sheet.out {
+	animation: sheetOut var(--t-sheet-out) var(--ease-exit) both;
+}
+@keyframes sheetIn {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: none;
+	}
+}
+@keyframes sheetOut {
+	to {
+		transform: translateY(100%);
+	}
+}
+.sheet-body {
+	background: var(--surface);
+	border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+	box-shadow: var(--shadow-pop);
+	padding: var(--space-2) var(--space-4) 30px;
+}
+.grabber {
+	display: block;
+	width: 36px;
+	height: 5px;
+	border-radius: var(--radius-full);
+	background: var(--line-2);
+	margin: 2px auto 10px;
+}
+.drawer-r {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 80;
+}
+.drawer-r.in {
+	animation: drawerRIn var(--t-sheet-in) var(--ease-out) both;
+}
+.drawer-r.out {
+	animation: drawerROut var(--t-sheet-out) var(--ease-exit) both;
+}
+@keyframes drawerRIn {
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: none;
+	}
+}
+@keyframes drawerROut {
+	to {
+		transform: translateX(100%);
+	}
+}
+
+/* thinking shimmer */
+.shimmer {
+	background: linear-gradient(
+		90deg,
+		var(--subtle) 0%,
+		var(--subtle) 40%,
+		var(--text) 50%,
+		var(--subtle) 60%,
+		var(--subtle) 100%
+	);
+	background-size: 300% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: shimmer 2.2s linear infinite;
+}
+@keyframes shimmer {
+	from {
+		background-position: 100% 0;
+	}
+	to {
+		background-position: 0 0;
+	}
+}
+
+/* surfaces: tone, not borders */
+.card {
+	background: var(--surface);
+	border-radius: var(--radius-xl);
+}
+.tile {
+	background: var(--raised);
+	border-radius: var(--radius-xl);
+}
+.well {
+	background: var(--well);
+	border-radius: var(--radius-lg);
+}
+.chev {
+	transition: transform 220ms var(--ease-in-out);
+}
+.chev.open {
+	transform: rotate(90deg);
+}
+.bar {
+	height: 4px;
+	border-radius: var(--radius-full);
+	background: var(--line-2);
+	overflow: hidden;
+}
+.bar > i {
+	display: block;
+	height: 100%;
+	border-radius: var(--radius-full);
+	background: var(--accent);
+	transition: width 400ms var(--ease-in-out);
+}
+.lights {
+	display: flex;
+	gap: var(--space-2);
+}
+.lights i {
+	width: 12px;
+	height: 12px;
+	border-radius: var(--radius-full);
+	display: block;
+}
+.lights i:nth-child(1) {
+	background: #ff5f57;
+}
+.lights i:nth-child(2) {
+	background: #febc2e;
+}
+.lights i:nth-child(3) {
+	background: #28c840;
+}
+
+/* text fields: a label above, an optional hint below */
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+.field input,
+.field textarea,
+.field select {
+	height: 44px;
+	padding: 0 14px;
+	border-radius: var(--radius-lg);
+	background: var(--overlay);
+	font-size: 15px;
+}
+.field textarea {
+	height: auto;
+	padding: 10px 14px;
+	line-height: 1.55;
+}
+/* on a sheet or drawer, whose surface is the overlay tone, the field sits on the raised tone */
+.sheet .field :is(input, textarea, select),
+.drawer-r .field :is(input, textarea, select) {
+	background: var(--raised);
+}
+
+/* a logo on its own tile */
+.logo-tile {
+	display: grid;
+	place-items: center;
+	flex: none;
+	background: var(--overlay);
+}
+
+/* a text button that reads as a link inside running text */
+.link {
+	color: var(--link);
+}
+.link:hover {
+	text-decoration: underline;
+}
+
+/* read by screen readers, not shown */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+/* density: data-density on the root (compact, comfortable, roomy) sets how tall list rows are */
+:root {
+	--row-pad: 10px;
+	--row-min: 76px;
+	--menu-row-min: 34px;
+}
+:root[data-density="compact"] {
+	--row-pad: 5px;
+	--row-min: 60px;
+	--menu-row-min: 30px;
+}
+:root[data-density="roomy"] {
+	--row-pad: 15px;
+	--row-min: 92px;
+	--menu-row-min: 40px;
+}
+
+/* a theme change without View Transitions: colours crossfade instead of swapping at once */
+:root.theme-fade,
+:root.theme-fade * {
+	transition:
+		background-color var(--t-move) var(--ease-in-out),
+		color var(--t-move) var(--ease-in-out),
+		border-color var(--t-move) var(--ease-in-out),
+		fill var(--t-move) var(--ease-in-out);
+}
+
+/* mail rows */
+.mrow {
+	position: relative;
+	display: grid;
+	grid-template-columns: 10px minmax(0, 1fr) auto;
+	column-gap: 10px;
+	row-gap: 2px;
+	width: 100%;
+	padding: var(--row-pad) var(--space-3);
+	border-radius: 10px;
+	text-align: left;
+}
+.mrow:hover {
+	background: var(--hover);
+}
+.mrow .acts {
+	position: absolute;
+	right: var(--space-2);
+	top: var(--space-2);
+	display: flex;
+	gap: 2px;
+	opacity: 0;
+	transition: opacity 160ms ease;
+	background: var(--overlay);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-soft);
+	padding: 2px;
+}
+.mrow:hover .acts,
+.mrow:focus-within .acts {
+	opacity: 1;
+}
+
+/* hairline between sidebar groups */
+.side-sep {
+	height: 1px;
+	flex: none;
+	margin: var(--space-2) 10px;
+	background: var(--line);
+}
+
+/* theme switch: circular mask from the tapped control */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+	animation: themeReveal 460ms var(--ease-in-out);
+}
+@keyframes themeReveal {
+	from {
+		clip-path: circle(0px at var(--vx, 50%) var(--vy, 50%));
+	}
+	to {
+		clip-path: circle(160% at var(--vx, 50%) var(--vy, 50%));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		animation-duration: 1ms !important;
+		transition-duration: 1ms !important;
+	}
+}

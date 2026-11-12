@@ -30,4 +30,18 @@ impl WebEngine {
     pub fn intent(&self, bytes: &[u8]) -> Result<(), JsError> {
         self.0.intent(bytes).map_err(JsError::from)
     }
+
+    /// The bytes of a message body (an HTML document) for the Service Worker to answer
+    /// `/body/<request>` with, or `undefined` for an unknown message. `request` is everything
+    /// after `/body/`, query included: `m-slides-4?theme=dark`.
+    pub fn body(&self, request: &str) -> Option<Vec<u8>> {
+        self.0.body(request)
+    }
+
+    /// The value of the `Content-Security-Policy` header to send with every body response, which
+    /// sandboxes the body since its iframe carries no sandbox attribute on web.
+    #[wasm_bindgen(js_name = "bodySandbox")]
+    pub fn body_sandbox() -> String {
+        crate::BODY_SANDBOX.into()
+    }
 }

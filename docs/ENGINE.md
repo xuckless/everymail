@@ -22,16 +22,20 @@ How the Rust engine works beyond the rules in [AGENTS.md](../AGENTS.md), which h
 ## Message bodies on web
 
 - A Service Worker answers body and attachment URLs by asking the engine Worker for the bytes. The iframe loads an ordinary same-origin URL, as it does on desktop through the custom URI scheme, and the Frontend code is the same on both
+- On web the iframe carries no `sandbox` attribute, because Chromium does not send a sandboxed iframe's load through a Service Worker. The Service Worker's response carries `Content-Security-Policy: sandbox allow-scripts` instead, which gives the body the same opaque origin with scripts only. The engine supplies that header value; desktop keeps the attribute and sends the header too
+- The body URL carries the engine's theme as a query part, so a theme change reloads each body. The Service Worker passes everything after `/body/`, query included, to the engine
 
 ## Desktop shell
 
 - Tauri commands are denied by default: an app manifest names each command the webview may call
-- Windows and macOS ship through the Microsoft Store and the Mac App Store, which also deliver updates. Linux ships from the first release through an install script fetched with curl, which also updates
+- Windows and macOS ship through the Microsoft Store and the Mac App Store, which also deliver updates. Linux ships from the first release through an install script fetched with curl, which also updates. The script checks a GPG signature on the release's SHA256SUMS file, then the hash, before it installs anything
 
 ## Body height
 
 - The engine appends one small trusted script to each served body, allowed by a per-response nonce, that reports the body's height to the page. Every other script stays blocked by the sanitizer and the content policy
+- The message is a bare number of CSS pixels: the body element's height, posted on load and on every resize. The page accepts it only from the iframe's own window
 
 ## Mobile
 
 - Tauri 2 mobile: the same Frontend and the same crate, compiled natively for iOS and Android. No second interface
+- The phone apps go out through TestFlight and Play testing first, and to the public stores once the product is past alpha

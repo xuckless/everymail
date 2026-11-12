@@ -1,0 +1,10 @@
+---
+import logos from "@everymail/design/logos.svg?url";
+
+interface Props {
+	name: string;
+	size: number;
+}
+const { name, size } = Astro.props;
+---
+<svg class="logo" width={size} height={size} aria-hidden="true"><use href={`${logos}#${name}`} /></svg>

@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// Bring your inboxes: the connected accounts and one step of connecting another.
+message ConnectView {
+  repeated ConnectedAccount connected = 1;
+  oneof step {
+    ConnectPicking picking = 2;
+    ConnectSigningIn signing_in = 3;
+    ConnectImapForm imap_form = 4;
+    ConnectSyncing syncing = 5;
+  }
+  // Every provider, in every step: the phone keeps the list behind a step's sheet.
+  repeated ConnectProvider providers = 6;
+}
+
+message ConnectedAccount {
+  string id = 1;
+  string name = 2;
+  MailProvider provider = 3;
+  // "Gmail"
+  string provider_name = 4;
+  AccountStatus status = 5;
+}
+
+// Choosing a provider from ConnectView.providers (Intent.pick_mail_provider).
+message ConnectPicking {
+  reserved 1;
+}
+
+message ConnectProvider {
+  MailProvider provider = 1;
+  // "iCloud Mail"
+  string name = 2;
+  // "Sign in with Google", "IMAP, app password"
+  string method = 3;
+}
+
+// The provider's own sign-in page is open in the browser. Back (Intent.back) or "I've signed in"
+// (Intent.confirm_connect).
+message ConnectSigningIn {
+  reserved 2, 3;
+  MailProvider provider = 1;
+  // "Finish signing in with Google"
+  string title = 4;
+  // "We opened Google’s own sign-in page in your browser. EveryMail never sees your password"
+  string note = 5;
+  // "Waiting for Google"
+  string waiting = 6;
+}
+
+// Address and app password for an IMAP provider. Back (Intent.back) or Connect (Intent.confirm_connect).
+// The typed values stay in the Frontend until the real connect flow, a later roadmap task.
+message ConnectImapForm {
+  reserved 2;
+  MailProvider provider = 1;
+  // Where to make an app password at this provider.
+  string password_hint = 3;
+  oneof server {
+    ServerKnown known = 4;
+    ServerEntry entry = 5;
+  }
+  // "Connect iCloud Mail"
+  string title = 6;
+}
+
+// The provider's IMAP server is known; no server fields.
+message ServerKnown {}
+
+// The user enters the IMAP server and port.
+message ServerEntry {
+  string default_port = 1;
+}
+
+// Newest mail first, so the user can start right away.
+message ConnectSyncing {
+  reserved 2;
+  MailProvider provider = 1;
+  // Progress from 0 to 100.
+  uint32 percent = 3;
+  // Messages, folders, search.
+  repeated Stat stats = 4;
+  // "Syncing iCloud Mail"
+  string title = 5;
+}

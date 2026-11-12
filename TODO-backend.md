@@ -140,7 +140,7 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic:
 - [ ] `MailService.Snooze` takes a preset (Later today, Tomorrow, This weekend, Next week) with the user's IANA zone, or a picked wall time plus zone, or an instant; the server resolves it with its own clock and stores a due-time job
 - [ ] The snooze job returns the thread to the inbox at its due time with every device off; edit and cancel through the due-time rule
 - [ ] Preset resolution as a pure function of server now and zone: Later today is 18:00 or 3 hours from now once past 15:00, Tomorrow 08:00, This weekend Saturday 09:00, Next week Monday 08:00; tests across DST
-- [ ] Decide: what to offer for Google accounts while Gmail is in testing mode. Options: agents on Gmail accounts only draft and never send until verification; drafts written into Gmail's Drafts folder, which the Drafts rule otherwise forbids; nothing special. Blocks the Gmail send tasks and the draft replies action
+- [ ] Until Gmail's verification is done, Send cannot be set to Auto on a Gmail account: the permission function returns Ask, and the setting is refused on agent create and update; one flag turns this off when verification completes; test
 - [ ] `MailService.Send` creates a send job: due 10 seconds after the Backend receives it for undo send, or at a given time for scheduled send; undo, reschedule and cancel go through the due-time rule
 - [ ] The send job runs in the send lane from the address the mail came to, with our own `Message-ID`, through the ledger
 - [ ] After an uncertain send the job looks for its `Message-ID` in Sent; found means sent, not found means the job waits for approval with an item asking the user; a send is never retried blindly; tests of the decision function
@@ -182,6 +182,20 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic:
 - [ ] Pause all: each run finishes its current step, then moves to paused; resume returns them to ready
 - [ ] A run failing on an expired sign-in sets that account's status to sign-in expired and continues with the other accounts
 
+## Agent chat
+
+- [ ] Conversation tables: one conversation per agent, its turns (the user's message, the answer as the typed deliverable, the run id, the turn's state as a `oneof` of running, waiting for approval, answered, failed with a reason, stopped at a limit) and the stored summary of older turns
+- [ ] `ChatService.Send` with an idempotency key: stores the message and emits a "user message" event in one transaction; refused with an explicit reason while a turn is running, for a system agent without chat, or without a key
+- [ ] "User message" as a run cause: the event starts one run for that agent; it never fans out to other agents
+- [ ] Chat answer deliverable for `finish`: text plus typed references to threads and calendar events
+- [ ] Prompt assembly gains the conversation part: the latest turns in full plus the stored summary, placed after notes; the user's message is the turn's instruction, mail and notes stay delimited data; test that a message cannot alter stored instructions or permissions
+- [ ] Conversation summary job: folds turns older than the window into the stored summary
+- [ ] `ChatService.List` and `ChatService.Clear`; conversation changes emitted as events for sync
+- [ ] Chat turns count toward steps per run, runs per agent per day, concurrent runs and the token budget; a turn refused at a cap carries the reason
+- [ ] Retention: conversation turns are removed after 90 days by the same sweep as the run log
+- [ ] Assistant system agent: seeded for every user, no trigger and no code stage, tools for reading and searching mail and calendar across accounts, default permissions with every write on Ask; deactivatable, not deletable
+- [ ] Tools for agents that can chat to read other agents' deliverables: a thread's stored summary (asking Scribe for it when none exists yet), and the latest briefing plus the four before it; only the deliverable is returned, never a transcript, and it is wrapped as delimited data; test that the tool is absent for agents without chat
+
 ## Agents and approvals
 
 - [ ] `AgentService` in `api.v1`: create, update, pause, resume, delete, run now, list runs
@@ -193,11 +207,14 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic:
 - [ ] A burst of mail creates one run per mail, with one run at a time per agent (a per-agent concurrency condition in the claim); test
 - [ ] Reactive trigger: new mail arrived (ordering in System agents)
 - [ ] Reactive trigger: mail sorted into a category or moved to a folder
+      Watch folder: the folder filter on this trigger; one event per mail entering the folder, whoever moved it; an agent may watch several folders; test that a mail already in the folder does not fire again
 - [ ] Reactive trigger: mail flagged
 - [ ] Reactive trigger: label or star added
 - [ ] Reactive trigger: another agent finished, with the handover deliverable as the event payload
+      The agent filter is required and names one of the user's own agents, system agents included; `AgentService` rejects the trigger without it and rejects an agent naming itself; test both, and that the chain still stops at depth 3
 - [ ] Reactive trigger: approval resolved
 - [ ] Proactive trigger: the schedule job per agent, which first runs a code-only check for anything new since the agent's last run and ends without any LLM call if nothing is new; test of the check
+      The schedule is a fixed option or a custom interval in seconds; `AgentService` rejects an interval under 900, with a test
 - [ ] An action set to Ask creates an approval item (agent, title, detail, reason such as "Send is set to Ask for new recipients") instead of acting
 - [ ] `ApprovalService` in `api.v1`: list, approve (performs the action), edit then approve, decline
 - [ ] Agent stats: handled this month, runs with no questions, waiting count, last run
@@ -244,7 +261,11 @@ Agents only: files and sheets an agent is pointed at. There is no file browser
 - [ ] News Bearer on a user-set schedule: a code stage collects what agents did (run log), what waits, the day's calendar and the newsletters and updates, and the model condenses them, through the batch API
 - [ ] Briefing record and `BriefingService` in `api.v1` to list and read briefings, synced to the engine
 - [ ] A permission on News Bearer lets it also mail the briefing, through the send path
-- [ ] Later, not designed now: News Bearer adds outside news through EveryAI's web search tool
+- [ ] News topics on News Bearer: a per-user list of at most 10 topics, set through `AgentService`; test of the cap
+- [ ] Web search tool in the tool registry, reusing EveryAI's web search; its results are wrapped as delimited data and set the run's read state like mail
+      Decide before building: who pays for the searches, since web search is not covered by the user's model key
+- [ ] News section in the briefing: for each topic News Bearer searches and condenses a few items, each stored with its title, source name and link; no topics means no search and no section
+- [ ] News items in the briefing deliverable and in `BriefingService`, so the engine receives them typed
 
 ## Notifications
 

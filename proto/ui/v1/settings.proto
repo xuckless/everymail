@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+enum SettingsSection {
+  SETTINGS_SECTION_UNSPECIFIED = 0;
+  SETTINGS_SECTION_ACCOUNTS = 1;
+  SETTINGS_SECTION_AGENT_PERMISSIONS = 2;
+  SETTINGS_SECTION_RULES = 3;
+  SETTINGS_SECTION_BLOCK_LIST = 4;
+  SETTINGS_SECTION_MODELS = 5;
+  SETTINGS_SECTION_APPEARANCE = 6;
+  SETTINGS_SECTION_YOUR_DATA = 7;
+}
+
+// The section list and the open section (Intent.open_settings).
+message SettingsView {
+  repeated SettingsTab sections = 1;
+  oneof section {
+    AccountsSettings accounts = 2;
+    AgentPermissionsSettings agent_permissions = 3;
+    RulesSettings rules = 4;
+    BlockListSettings block_list = 5;
+    ModelsSettings models = 6;
+    AppearanceSettings appearance = 7;
+    YourDataSettings your_data = 8;
+  }
+}
+
+message SettingsTab {
+  SettingsSection section = 1;
+  string label = 2;
+  bool selected = 3;
+}
+
+// "Add account" is Intent.open_connect.
+message AccountsSettings {
+  repeated SettingsAccount accounts = 1;
+}
+
+message SettingsAccount {
+  reserved 4;
+  string id = 1;
+  string name = 2;
+  MailProvider provider = 3;
+  // Its dot; the label is in `status_line`.
+  AccountStatus status = 5;
+  oneof signature {
+    string text = 6;
+    NoSignature none = 7;
+  }
+  // The line under the name: "iCloud Mail over IMAP · App password expired"
+  string status_line = 8;
+}
+
+message NoSignature {}
+
+// Defaults for new agents; each agent can change its own.
+message AgentPermissionsSettings {
+  repeated Permission defaults = 1;
+  // Notify me when something waits.
+  bool notify_when_waiting = 2;
+  // Pause all agents.
+  bool agents_paused = 3;
+}
+
+// Fixed checks on every new mail, before any agent.
+message RulesSettings {
+  repeated Rule rules = 1;
+}
+
+message Rule {
+  string id = 1;
+  // "sender domain is laurentian.ca"
+  string when = 2;
+  // "mark important and notify me"
+  string then = 3;
+  bool enabled = 4;
+}
+
+// Mail from these senders goes straight to Quarantine.
+message BlockListSettings {
+  oneof state {
+    BlockedSenders blocked = 1;
+    NobodyBlocked nobody = 2;
+  }
+}
+
+message BlockedSenders {
+  repeated BlockedSender senders = 1;
+}
+
+message BlockedSender {
+  string address = 1;
+  // "Blocked by Security Guard · today"
+  string blocked_by = 2;
+}
+
+message NobodyBlocked {}
+
+message ModelsSettings {
+  oneof keys {
+    // No key yet: AI compose, Scribe and the user's own agents are off.
+    NoKeySet none = 1;
+    SomeKeySet some = 2;
+  }
+  repeated ProviderKey providers = 3;
+  // Model for each task.
+  repeated TaskModel tasks = 4;
+  oneof budget {
+    NoBudget unlimited = 5;
+    DailyBudget daily = 6;
+  }
+}
+
+message NoKeySet {}
+
+message SomeKeySet {}
+
+message ProviderKey {
+  ModelProvider provider = 1;
+  string name = 2;
+  oneof state {
+    KeySet set = 3;
+    KeyMissing missing = 4;
+  }
+  // The key field's label: "Anthropic key"
+  string key_label = 5;
+}
+
+// A key is stored, encrypted and never shown again.
+message KeySet {}
+
+message KeyMissing {}
+
+message TaskModel {
+  // "Writing replies"
+  string task = 1;
+  // "AI compose and drafts"
+  string hint = 2;
+  Model model = 3;
+}
+
+message NoBudget {}
+
+message DailyBudget {
+  // "500,000"
+  string tokens = 1;
+  // "182,400 used today"
+  string used = 2;
+}
+
+// Theme is set with Intent.set_theme; it also arrives as ShellView.theme.
+message AppearanceSettings {
+  repeated ThemeChoice themes = 1;
+  repeated DensityChoice densities = 2;
+}
+
+message ThemeChoice {
+  Theme theme = 1;
+  string label = 2;
+  bool selected = 3;
+}
+
+// Density is set with Intent.set_density; it also arrives as ShellView.density.
+message DensityChoice {
+  string label = 1;
+  bool selected = 2;
+  Density density = 3;
+}
+
+// Export and delete account; no data shown.
+message YourDataSettings {}

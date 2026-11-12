@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package api.v1;
+
+// Engine to Backend. Wire: POST /api.v1.HealthService/Check, body application/proto.
+service HealthService {
+  rpc Check(CheckRequest) returns (CheckResponse);
+}
+
+message CheckRequest {}
+
+// An unset oneof is a decode error, never a state.
+message CheckResponse {
+  oneof database {
+    DatabaseReady ready = 1;
+    DatabaseUnavailable unavailable = 2;
+  }
+}
+
+message DatabaseReady {}
+
+message DatabaseUnavailable {}

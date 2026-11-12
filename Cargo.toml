@@ -1,0 +1,9 @@
+[workspace]
+resolver = "3"
+members = ["engine", "desktop"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

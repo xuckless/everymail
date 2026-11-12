@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: everymail
+      POSTGRES_DB: everymail
+    ports:
+      - "5432:5432"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=16MB # default 128MB; the 100 MB idle gate leaves no room for it
+      - -c
+      - max_connections=10 # default 100; backend pool is 3, per-backend memory adds up
+      - -c
+      - jit=off # JIT loads LLVM into each backend that uses it; tiny queries gain nothing
+      - -c
+      - max_parallel_workers=0 # no parallel query workers
+      - -c
+      - max_parallel_workers_per_gather=0 # planner must not plan parallel gathers

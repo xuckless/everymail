@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package ui.v1;
+
+// Engine to Frontend: the whole shell, resent on every change.
+message ShellView {
+  ConnectionView connection = 1;
+}
+
+// An unset oneof is a decode error, never a state.
+message ConnectionView {
+  oneof state {
+    Connecting connecting = 1;
+    Connected connected = 2;
+    ConnectionFailed failed = 3;
+  }
+}
+
+message Connecting {}
+
+message Connected {}
+
+message ConnectionFailed {
+  oneof reason {
+    BackendUnreachable backend_unreachable = 1;
+    DatabaseUnavailable database_unavailable = 2;
+  }
+}
+
+message BackendUnreachable {}
+
+message DatabaseUnavailable {}
+
+// Frontend to engine.
+message Intent {
+  oneof kind {
+    RetryConnection retry_connection = 1;
+  }
+}
+
+message RetryConnection {}

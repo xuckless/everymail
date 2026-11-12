@@ -1,0 +1,19 @@
+{
+	"name": "@everymail/backend",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"gen": "buf generate ../proto --path ../proto/api",
+		"dev": "bun --watch src/main.ts",
+		"start": "bun src/main.ts",
+		"typecheck": "tsc --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@bufbuild/protobuf": "^2.17.0"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.4.4",
+		"typescript": "^7.0.2"
+	}
+}

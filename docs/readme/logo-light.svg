@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" width="260" height="64" role="img" font-family="ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif">
+<title>EveryMail</title>
+<g transform="translate(0 4) scale(0.56) rotate(90 50 50)"><path fill="#9C85FC" d="M26 12H79A9 9 0 0 1 79 30H39A5 5 0 0 0 34 35V36A5 5 0 0 0 39 41H52A9 9 0 0 1 52 59H39A5 5 0 0 0 34 64V65A5 5 0 0 0 39 70H79A9 9 0 0 1 79 88H26A14 14 0 0 1 12 74V26A14 14 0 0 1 26 12Z"/><circle fill="#2CCCEB" cx="79" cy="50" r="9"/></g>
+<text x="70" y="44" fill="#16161A" font-size="34" font-weight="600">EveryMail</text>
+</svg>

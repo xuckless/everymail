@@ -71,7 +71,7 @@ bun run check          # lint, types, clippy, tests
 - `desktop/` the Tauri shell
 - `frontend/` the React UI
 
-Rules are in [AGENTS.md](AGENTS.md). The roadmap is in [TODO-backend.md](TODO-backend.md), [TODO-rust-core.md](TODO-rust-core.md) and [TODO-frontend.md](TODO-frontend.md).
+Rules are in [AGENTS.md](AGENTS.md), and how each part works is in [docs/BACKEND.md](docs/BACKEND.md) and [docs/ENGINE.md](docs/ENGINE.md). The roadmap is in [TODO-backend.md](TODO-backend.md), [TODO-rust-core.md](TODO-rust-core.md) and [TODO-frontend.md](TODO-frontend.md).
 
 ## License
 

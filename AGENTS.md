@@ -4,6 +4,33 @@ Mail client that connects every inbox, plus drive, OneDrive and calendar with re
 
 Design source: the EveryMail artifact in the owner's Claude account (https://claude.ai/artifact/7p4rWpG1SMMspPD8EJYrp3), built on the EveryAI Design System.
 
+## Where the detail lives
+
+This file holds the rules. How each part works is in the docs, what to build is in the roadmaps, and what is still undecided is a "Decide:" task in a roadmap, nowhere else
+
+| Topic                                           | How it works                                                                                                                                                                                             | What to build                                                                                                                                                                    |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Jobs, the executor, leases, lanes               | [Jobs](docs/BACKEND.md#jobs)                                                                                                                                                                             | [Jobs, time and side effects](TODO-backend.md#jobs-time-and-side-effects)                                                                                                        |
+| Server time, schedules, snooze, undo send       | [Time](docs/BACKEND.md#time), [Safety caps and snooze presets](docs/BACKEND.md#safety-caps-and-snooze-presets)                                                                                           | [Jobs, time and side effects](TODO-backend.md#jobs-time-and-side-effects), [Write actions](TODO-backend.md#write-actions)                                                        |
+| Idempotency and sending mail                    | [Side effects](docs/BACKEND.md#side-effects)                                                                                                                                                             | [Write actions](TODO-backend.md#write-actions)                                                                                                                                   |
+| Triggers and events                             | [Events and triggers](docs/BACKEND.md#events-and-triggers)                                                                                                                                               | [Agents and approvals](TODO-backend.md#agents-and-approvals)                                                                                                                     |
+| Agent runs, prompts, memory                     | [Agent runs](docs/BACKEND.md#agent-runs)                                                                                                                                                                 | [Agent runs](TODO-backend.md#agent-runs)                                                                                                                                         |
+| Permissions and hostile mail content            | [Permissions and untrusted content](docs/BACKEND.md#permissions-and-untrusted-content)                                                                                                                   | [Agent runs](TODO-backend.md#agent-runs)                                                                                                                                         |
+| Gatekeeper, Security Guard, Scribe, News Bearer | [System agents](docs/BACKEND.md#system-agents), [Rules and the block list](docs/BACKEND.md#rules-and-the-block-list)                                                                                     | [System agents](TODO-backend.md#system-agents)                                                                                                                                   |
+| LLM keys, caps, embeddings                      | [LLM access and limits](docs/BACKEND.md#llm-access-and-limits), [Embeddings](docs/BACKEND.md#embeddings)                                                                                                 | [LLM access and limits](TODO-backend.md#llm-access-and-limits), [Embeddings](TODO-backend.md#embeddings)                                                                         |
+| Mail providers, calendar, stored mail           | [Providers](docs/BACKEND.md#providers), [Stored mail](docs/BACKEND.md#stored-mail), [Gmail access](docs/BACKEND.md#gmail-access)                                                                         | [First account connected](TODO-backend.md#first-account-connected-and-mail-synced-read-only), [Calendar](TODO-backend.md#calendar)                                               |
+| Sync between Backend and engine                 | [Sync and live updates](docs/BACKEND.md#sync-and-live-updates), [Schema](docs/BACKEND.md#schema)                                                                                                         | [First account connected](TODO-backend.md#first-account-connected-and-mail-synced-read-only), [engine side](TODO-rust-core.md#first-account-connected-and-mail-synced-read-only) |
+| Sign-in and sessions                            | [Sign-in](docs/BACKEND.md#sign-in), [Session](docs/ENGINE.md#session)                                                                                                                                    | [Foundations](TODO-backend.md#foundations), [Session and local database](TODO-rust-core.md#session-and-local-database)                                                           |
+| Notifications                                   | [Notifications](docs/BACKEND.md#notifications)                                                                                                                                                           | [Backend](TODO-backend.md#notifications), [engine](TODO-rust-core.md#notifications)                                                                                              |
+| Deployment, HTTP engine, Postgres, logs         | [Deployment](docs/BACKEND.md#deployment), [Backend engine](docs/BACKEND.md#backend-engine), [Backend database](docs/BACKEND.md#backend-database), [Running on the VM](docs/BACKEND.md#running-on-the-vm) | [Deployment and measurement](TODO-backend.md#deployment-and-measurement), [Anole swap](TODO-backend.md#anole-swap)                                                               |
+| Deletion, export, pricing, landing page         | [User data](docs/BACKEND.md#user-data), [Pricing](docs/BACKEND.md#pricing), [Landing page](docs/BACKEND.md#landing-page)                                                                                 | [User data](TODO-backend.md#user-data), [Waitlist](TODO-backend.md#waitlist), [Landing page](TODO-frontend.md#landing-page)                                                      |
+| Local replica, search, drafts                   | [Local replica](docs/ENGINE.md#local-replica), [Drafts](docs/ENGINE.md#drafts)                                                                                                                           | [Session and local database](TODO-rust-core.md#session-and-local-database), [Search](TODO-rust-core.md#search)                                                                   |
+| Message bodies and their height                 | [Message bodies on web](docs/ENGINE.md#message-bodies-on-web), [Body height](docs/ENGINE.md#body-height)                                                                                                 | [Inbox and thread reading](TODO-rust-core.md#inbox-and-thread-reading), [Web parity](TODO-rust-core.md#web-parity)                                                               |
+| Desktop shell, stores, mobile                   | [Desktop shell](docs/ENGINE.md#desktop-shell), [Mobile](docs/ENGINE.md#mobile)                                                                                                                           | [Packaging and measurement](TODO-rust-core.md#packaging-and-measurement), [Packaging and measurement gates](TODO-frontend.md#packaging-and-measurement-gates)                    |
+| Screens and motion                              | The UI/UX rules below                                                                                                                                                                                    | [TODO-frontend.md](TODO-frontend.md)                                                                                                                                             |
+
+A change to how something works is made in the doc and its roadmap together. A rule in this file wins over both
+
 ## Goals
 
 - Minimal tech debt
@@ -18,50 +45,26 @@ Design source: the EveryMail artifact in the owner's Claude account (https://cla
 
 ## Stack
 
-| Part                                     | Choice                                                                                                                                                                               | Status                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| Backend                                  | Bun (`Bun.serve`), everything in TypeScript: agents, scheduling, notifications, provider/connector logic via TypeScript libraries                                                    | Chosen                                              |
-| Backend database access                  | Bun's built-in Postgres client (`Bun.sql`) with plain `.sql` migrations. No ORM                                                                                                      | Chosen                                              |
-| Engine local database                    | rusqlite, bundled, added with the first local table                                                                                                                                  | Chosen                                              |
-| Protobuf transport                       | Plain protobuf over HTTP POST: `POST /api.v1.Service/Method`, body `application/proto` (the Connect unary wire shape, no RPC framework). Streaming is decided with the sync protocol | Chosen                                              |
-| Code generation                          | buf with protobuf-es for TypeScript, prost for Rust. Generated code is not committed                                                                                                 | Chosen                                              |
-| Monorepo tooling                         | Bun workspaces and one Cargo workspace. Biome for TypeScript, clippy and rustfmt for Rust                                                                                            | Chosen                                              |
-| Backend database                         | PostgreSQL with pgvector                                                                                                                                                             | Chosen, gated on fitting under 100 MB on the GCE VM |
-| Rust engine                              | Rust: all heavy tasks and async threads, for speed and performance                                                                                                                   | Chosen                                              |
-| Frontend                                 | React + Vite                                                                                                                                                                         | Chosen                                              |
-| Desktop shell                            | Tauri 2, hosting the Frontend and the Rust engine                                                                                                                                    | Chosen                                              |
-| Hosting                                  | GCE, alongside the EveryAI services                                                                                                                                                  | Chosen                                              |
-| Mobile, job scheduling, auth, LLM access |                                                                                                                                                                                      | Undecided                                           |
+| Part                    | Choice                                                                                                                                                                                                                      | Status                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Backend                 | Bun (`Bun.serve`), everything in TypeScript: agents, scheduling, notifications, provider/connector logic via TypeScript libraries                                                                                           | Chosen                                              |
+| Backend database access | Bun's built-in Postgres client (`Bun.sql`) with plain `.sql` migrations. No ORM                                                                                                                                             | Chosen                                              |
+| Engine local database   | rusqlite, bundled, added with the first local table                                                                                                                                                                         | Chosen                                              |
+| Protobuf transport      | Plain protobuf over HTTP POST: `POST /api.v1.Service/Method`, body `application/proto` (the Connect unary wire shape, no RPC framework). Sync adds one streamed response, see Sync transport                                | Chosen                                              |
+| Code generation         | buf with protobuf-es for TypeScript, prost for Rust. Generated code is not committed                                                                                                                                        | Chosen                                              |
+| Monorepo tooling        | Bun workspaces and one Cargo workspace. Biome for TypeScript, clippy and rustfmt for Rust                                                                                                                                   | Chosen                                              |
+| Backend database        | PostgreSQL with pgvector                                                                                                                                                                                                    | Chosen, gated on fitting under 100 MB on the GCE VM |
+| Rust engine             | Rust: all heavy tasks and async threads, for speed and performance                                                                                                                                                          | Chosen                                              |
+| Frontend                | React + Vite                                                                                                                                                                                                                | Chosen                                              |
+| Desktop shell           | Tauri 2, hosting the Frontend and the Rust engine                                                                                                                                                                           | Chosen                                              |
+| Hosting                 | GCE, alongside the EveryAI services                                                                                                                                                                                         | Chosen                                              |
+| Job scheduling          | One jobs table in Postgres, claimed in batches with `FOR UPDATE SKIP LOCKED`, inside the Backend process                                                                                                                    | Chosen                                              |
+| LLM access              | Bring your own key only, keys stored encrypted on the Backend. Anthropic, OpenAI, Google Gemini and OpenRouter first; any dedicated provider can be added. Embeddings are the exception: one hosted model on a platform key | Chosen                                              |
+| Sign-in                 | Google or Microsoft now, an EveryAI account later                                                                                                                                                                           | Chosen                                              |
+| Sync transport          | One streamed HTTP response of length-prefixed protobuf frames from Backend to engine; unary POST the other way                                                                                                              | Chosen                                              |
+| Mobile                  | Tauri 2 mobile, same Frontend and same Rust crate                                                                                                                                                                           | Chosen                                              |
 
 No Rust in the Backend. Rust lives only in the Rust engine
-
-## Deployment
-
-- The Backend runs on GCE next to the EveryAI services
-- Keep the deployment lean: no extra infrastructure until a measured need
-
-## Backend engine
-
-`Bun.serve` for now. Fastify was dropped: with protobuf only on the wire its validation, serialization and plugins go unused
-
-- Handlers are pure functions from a protobuf request to a protobuf response, registered in one RPC table that knows nothing about HTTP
-- One thin adapter binds the table to the HTTP engine. It is the only code that knows about HTTP
-- Later the HTTP engine is replaced by the Anole engine (the owner's Zig server, https://github.com/xuckless/anole) by replacing that adapter: no rewrite of application code is allowed or needed
-
-Expected gain: higher throughput at a higher idle memory cost. Owner's benchmark, Bun vs Bun with Anole:
-
-| Route      | req/s                   | p99 ms    | CPU µs/req | Memory MB |
-| ---------- | ----------------------- | --------- | ---------- | --------- |
-| plaintext  | 151.2k → 326.0k (2.16x) | 1.2 → 0.7 | 4.8 → 5.6  | 99 → 201  |
-| json       | 151.1k → 333.5k (2.21x) | 1.2 → 0.7 | 4.7 → 5.6  | 103 → 195 |
-| users/42   | 148.4k → 320.0k (2.16x) | 1.2 → 0.7 | 4.9 → 6.0  | 112 → 190 |
-| POST items | 116.9k → 241.0k (2.06x) | 1.6 → 1.2 | 6.7 → 8.1  | 108 → 216 |
-
-## Backend database
-
-- PostgreSQL with pgvector, on the GCE VM, accessed from TypeScript
-- Gate: Postgres uses less than 100 MB of memory when idle on the VM, measured as anonymous plus shared memory of all its processes, not page cache. If it does not fit, fall back to Turso accessed from TypeScript
-- Run it tuned for a small box: small `shared_buffers`, few `max_connections` behind a small pool, JIT and parallel workers off
 
 ## Hard requirements (whole app)
 
@@ -77,26 +80,27 @@ The part users interact with and see. React + Vite, TypeScript for developer exp
 - TypeScript renders and handles input only. It holds no business logic and keeps in memory only what is on screen; the Rust engine owns the data
 - One Frontend codebase: the web app and the Tauri desktop app share the same React UI
 - The Frontend talks only to the Rust engine, never to the Backend
+- Libraries that are already optimized and save real work are welcome, loaded lean: import only the parts used. Motion is the animation library for shared layout, exits and gestures; plain CSS covers presses, fades and dots
 - Performant and low RAM: the whole desktop app (Frontend plus Rust engine) must not exceed 300-400 MB on any desktop
 
 ## Rust engine
 
 The heavy lifter, and a pseudo backend for the Frontend. It exists to lower the memory profile and raise performance
 
-- Every heavy, performance-critical or thread-blocking process runs here: parsing, sanitizing, indexing, search, sync, local database access, crypto and the like
+- Every heavy, performance-critical or thread-blocking process runs here: sanitizing, indexing, search, sync, local database access, crypto and the like
 - One Rust crate for all heavy work. Desktop runs it natively in Tauri; web runs the same crate compiled to WASM in a Web Worker. No second implementation in TypeScript
-- Keeps a local SQLite database on desktop, so lists, search and reading are served locally. It is synced from the Backend over protobuf
+- Keeps a local SQLite database, so lists, search and reading are served locally. It is synced from the Backend over protobuf
 
 ## Engine boundaries
 
-The Rust engine sits between the Frontend and the Backend: the Frontend talks only to the engine, and the engine is the only client of the Backend
+The Rust engine sits between the Frontend and the Backend: the Frontend talks only to the engine, and the engine is the only client of the Backend. The one exception is the landing page's waitlist form, which posts to one public Backend call
 
 - The engine owns the Backend connection, the session and its credentials, sync, the local database, the offline queue and shaping data for the Frontend
 - Engine to Backend: protobuf over the Backend's protobuf transport (package `api.v1`)
 - Frontend to engine: protobuf bytes through Tauri's raw binary IPC, with Tauri channels for streaming updates. On web, the Worker running the WASM engine passes the same bytes to the main thread
 - Frontend messages are shaped for the Frontend (package `ui.v1`, in the same `proto/` tree): view messages such as rows and thread views going out, small intent messages coming in. They import shared domain messages and add only presentation fields
 - Anything with states is a `oneof` sent by the engine (for example loading, loaded, failed), so TypeScript never derives state from flags
-- Message bodies and attachments are served by the engine through a Tauri custom URI scheme into a sandboxed iframe or image, so they never enter the JavaScript heap. This is the one explicit exception to protobuf-only: raw content bytes, not protobuf and not JSON
+- Message bodies and attachments are served by the engine through a Tauri custom URI scheme into a sandboxed iframe or image, so they never enter the JavaScript heap. On web a Service Worker in front of the engine Worker plays the part of the scheme. This is the one explicit exception to protobuf-only: raw content bytes, not protobuf and not JSON
 - The engine does transport, sync, caching, queueing and view shaping only. It makes no domain decision the Backend also makes, such as agent permissions, to avoid duplicating Backend logic
 - Platform differences (transport, storage and the async runtime: native networking, SQLite and threads on desktop; browser fetch and streams, SQLite on WASM and a single Worker on web) sit behind a small platform adapter layer inside the crate, and nothing above it is aware of the target
 
@@ -177,13 +181,3 @@ Every use of the following needs a stated reason:
 - Remove one-time tests and tests that existed only to debug something once
 - Think twice before adding a test that depends on how fast the machine is
 - A CI test that turns out flaky is deleted AND rewritten from scratch
-
-## Open questions
-
-- Web build: where the web app keeps its local replica (for example SQLite compiled to WASM on the browser's origin private file system). The browser transport is decided: fetch, same origin as the Backend
-- Web build: how message bodies and attachments are served, since the custom URI scheme exists only in Tauri (for example a Service Worker in front of the engine Worker)
-- Which side parses MIME and sanitizes HTML. The Backend needs parsed mail for agents and the engine is assigned parsing: doing both duplicates logic, so one side owns it and the other receives protobuf
-- Streaming transport for sync, decided together with the sync protocol
-- Sync protocol between the Backend (Postgres) and the Rust engine's local SQLite replica
-- Schema ownership: Postgres tables, SQLite tables and protobuf messages describe the same entities. Decide the single source and generate the rest, so the schema is not written three times
-- Web engine: which context owns the local database when several tabs are open

@@ -101,7 +101,7 @@ The user can write to an agent and get an answer, for a question about their mai
 - One conversation per agent. It is a fourth kind of memory, kept apart from the other three: it holds the user's messages and the agent's answers, never a transcript. A turn's prompt gets the latest turns in full plus a stored summary of the rest
 - The user's message is an instruction for that turn only. It cannot change the agent's stored instructions, permissions or schedule. Mail and notes read during the turn stay untrusted, and the run's read state applies as in any run
 - The agent's permissions apply unchanged. An action that resolves to Ask parks the turn and appears in the approval queue and in the conversation
-- One turn at a time per conversation: a message sent while a turn is running is refused, and the engine receives the running turn as an explicit state
+- One running turn at a time per conversation: a message sent while a turn is running is refused, and the engine receives the running turn as an explicit state. A turn parked on an approval does not hold the conversation: the user can keep writing, and the parked turn finishes when the approval is resolved
 - The answer reaches the app through sync when the turn finishes. There is no token-by-token streaming at first
 - Chat turns count toward the safety caps and the token budget. Without a key, chat is off, as an explicit state
 - A conversation is kept 90 days, like the run log, and the user can clear it

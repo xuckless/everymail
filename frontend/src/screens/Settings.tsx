@@ -23,8 +23,7 @@ import {
 } from "./settings/sections";
 
 // Settings: the section list and the open section. The open section is the engine's
-// (open_settings); each section shows what its view gives. Only the theme control and
-// "Add account" have intents; every other control is drawn without a handler.
+// (open_settings); each section shows what its view gives.
 // Desktop: the section list as a column beside the section. Phone: one column, the section list
 // collapsed into a menu on top.
 export function Settings({ view }: ScreenProps<SettingsView>) {
@@ -66,7 +65,7 @@ function SectionBody({ view }: { view: SettingsView }) {
 		case "appearance":
 			return <Appearance section={section.value} />;
 		case "yourData":
-			return <YourData />;
+			return <YourData section={section.value} />;
 		case undefined:
 			return unset("SettingsView.section");
 	}
@@ -84,7 +83,7 @@ function SectionNav({ tabs }: { tabs: SettingsTab[] }) {
 	return (
 		<nav className="panel settings-nav" aria-label="Settings sections">
 			<h2 className="h2 settings-nav-title">Settings</h2>
-			<div className="settings-nav-items">
+			<div>
 				{tabs.map((tab) => (
 					<button
 						key={tab.section}

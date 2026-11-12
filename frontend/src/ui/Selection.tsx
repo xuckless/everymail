@@ -1,7 +1,7 @@
 import { m } from "motion/react";
 import { useId } from "react";
 import { cx } from "./cx";
-import { move } from "./motion";
+import { useTiming } from "./motion";
 
 // The highlight behind the selected row of a list, which glides ease-in-out to the next selected
 // row: every row of one list passes the same `group` (from useSelectionGroup), and only the row
@@ -17,6 +17,7 @@ export function SelectionMark({
 	// `strong` on a panel, nothing on the page's own background.
 	className?: string;
 }) {
+	const { move } = useTiming();
 	return (
 		<m.span
 			layoutId={group}

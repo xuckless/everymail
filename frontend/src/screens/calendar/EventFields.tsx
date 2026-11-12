@@ -1,29 +1,79 @@
-import { useSend } from "../../engine";
+import type { MessageInitShape } from "@bufbuild/protobuf";
+import { unset, useSend } from "../../engine";
 import type { EventDetail } from "../../gen/ui/v1/calendar_pb";
+import { Form } from "../../gen/ui/v1/common_pb";
+import type { SaveEventSchema } from "../../gen/ui/v1/shell_pb";
 import { useDraft } from "../../presentation";
 import { Button, IconButton } from "../../ui/Button";
+import { Confirm } from "../../ui/Confirm";
+import { cx } from "../../ui/cx";
 import { Field } from "../../ui/Field";
+import { OutcomeNote, pulseOn, useOutcome } from "../../ui/Outcome";
 import { Segmented } from "../../ui/Segmented";
 import { stagger } from "../../ui/stagger";
 import { calendarColor } from "./color";
 
-// The event's fields and footer, in the desktop drawer and the phone sheet. Nothing here has an
-// intent yet but Cancel: every field keeps what is typed in a draft (input before commit) that
-// starts at the engine's value, and Add, Remove, Delete and Save are drawn without a handler.
-export function EventFields({ event }: { event: EventDetail }) {
+// The event's fields and footer, in the desktop drawer and the phone sheet. Every field is a
+// draft of the user's (input before commit) that starts at the engine's value; Save sends them
+// all with Intent.save_event, and a refusal shows under the footer. A saved event offers Delete,
+// which asks first; the unsaved new one is dropped by Cancel.
+export type Saving = NonNullable<
+	MessageInitShape<typeof SaveEventSchema>["event"]
+>;
+
+export function EventFields({
+	event,
+	saving,
+}: {
+	event: EventDetail;
+	saving: Saving;
+}) {
 	const send = useSend();
 	const [title, setTitle] = useDraft(event.title);
-	const [day, setDay] = useDraft(event.days.find((d) => d.selected)?.id);
-	const [starts, setStarts] = useDraft(event.starts);
-	const [ends, setEnds] = useDraft(event.ends);
+	const [day, setDay] = useDraft(event.dayId);
+	const [start, setStart] = useDraft(event.startMinute);
+	const [end, setEnd] = useDraft(event.endMinute);
 	const [calendar, setCalendar] = useDraft(
-		event.calendars.find((c) => c.selected)?.id,
+		(
+			event.calendars.find((c) => c.selected) ??
+			unset("EventEditor: a calendar selected")
+		).id,
 	);
+	const [guests, setGuests] = useDraft(event.guests);
 	const [guest, setGuest] = useDraft();
+	const outcome = useOutcome(
+		saving.case === "eventId"
+			? { case: "eventId", value: saving.value }
+			: { case: "form", value: Form.NEW_EVENT },
+	);
+	// The guest list is input before Save: a typed name joins it as typed; with nothing typed there
+	// is nothing to add.
+	const addGuest = () => {
+		if (guest === "") return;
+		setGuests([...guests, guest]);
+		setGuest("");
+	};
 	const section = (index: number) => ({
-		className: "cal-field settle stagger",
+		className: "cal-field settle",
 		style: stagger(index),
 	});
+	const times = (
+		label: string,
+		value: number,
+		set: (minute: number) => void,
+	) => (
+		<select
+			aria-label={label}
+			value={value}
+			onChange={(e) => set(Number(e.target.value))}
+		>
+			{event.times.map((time) => (
+				<option key={time.minute} value={time.minute}>
+					{time.label}
+				</option>
+			))}
+		</select>
+	);
 	return (
 		<div className="cal-fields">
 			<div className="scroll cal-fields-scroll">
@@ -33,11 +83,8 @@ export function EventFields({ event }: { event: EventDetail }) {
 				<div {...section(1)}>
 					<span className="label">When</span>
 					<div className="cal-when">
-						<label className="sr-only" htmlFor="cal-day">
-							Day
-						</label>
 						<select
-							id="cal-day"
+							aria-label="Day"
 							value={day}
 							onChange={(e) => setDay(e.target.value)}
 						>
@@ -47,13 +94,8 @@ export function EventFields({ event }: { event: EventDetail }) {
 								</option>
 							))}
 						</select>
-						<Field
-							label="Starts"
-							hideLabel
-							value={starts}
-							onChange={setStarts}
-						/>
-						<Field label="Ends" hideLabel value={ends} onChange={setEnds} />
+						{times("Starts", start, setStart)}
+						{times("Ends", end, setEnd)}
 					</div>
 				</div>
 				<div {...section(2)}>
@@ -84,23 +126,44 @@ export function EventFields({ event }: { event: EventDetail }) {
 								label="Guests"
 								value={guest}
 								onChange={setGuest}
+								onEnter={addGuest}
 								placeholder="Name or address"
 							/>
 						</span>
-						<Button variant="soft">Add</Button>
+						<Button variant="soft" onClick={addGuest}>
+							Add
+						</Button>
 					</span>
-					{event.guests.map((guest) => (
-						<div key={guest} className="cal-guest">
-							<span className="trunc grow">{guest}</span>
-							<IconButton icon="close" size="sm" label={`Remove ${guest}`} />
+					{guests.map((each) => (
+						<div key={each} className="cal-guest row-in">
+							<span className="trunc grow">{each}</span>
+							<IconButton
+								icon="close"
+								size="sm"
+								label={`Remove ${each}`}
+								onClick={() => setGuests(guests.filter((g) => g !== each))}
+							/>
 						</div>
 					))}
 				</div>
 			</div>
+			<OutcomeNote outcome={outcome} className="cal-outcome" />
 			<div className="cal-foot">
-				<Button variant="ghost" className="cal-delete">
-					Delete
-				</Button>
+				{saving.case === "eventId" && (
+					<Confirm
+						question="Delete this event?"
+						action="Delete"
+						side="above"
+						onConfirm={() =>
+							send({ case: "deleteEvent", value: { eventId: saving.value } })
+						}
+						trigger={(props) => (
+							<Button {...props} variant="ghost" className="bad">
+								Delete
+							</Button>
+						)}
+					/>
+				)}
 				<span className="grow" />
 				<Button
 					variant="ghost"
@@ -108,7 +171,24 @@ export function EventFields({ event }: { event: EventDetail }) {
 				>
 					Cancel
 				</Button>
-				<Button variant="primary" className="cal-save">
+				<Button
+					variant="primary"
+					className={cx("cal-save", pulseOn(outcome))}
+					onClick={() =>
+						send({
+							case: "saveEvent",
+							value: {
+								event: saving,
+								title,
+								dayId: day,
+								startMinute: start,
+								endMinute: end,
+								calendarId: calendar,
+								guests,
+							},
+						})
+					}
+				>
 					Save
 				</Button>
 			</div>

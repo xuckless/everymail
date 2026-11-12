@@ -20,43 +20,70 @@
 [data-look="declined"] {
 	opacity: 0.5;
 }
+.cal-main {
+	flex: 1;
+	min-height: 0;
+}
+.cal-period {
+	flex: 1;
+	min-height: 0;
+	grid-template-rows: minmax(0, 1fr);
+}
+.cal-period > .overlap-layer {
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
 .cal-week {
 	--k: calc(52px / 60);
 	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
 }
 .cal-bar {
-	height: 56px;
 	flex: none;
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	padding: 0 12px 0 18px;
+	gap: var(--space-3);
+	padding: var(--space-4) var(--space-4) var(--space-3) var(--space-6);
 }
-.cal-range {
-	padding-left: 6px;
+.cal-title-line {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-3);
 }
-.cal-new {
-	margin-left: 6px;
+.cal-modes {
+	width: 216px;
+}
+.cal-nav {
+	display: flex;
+	align-items: center;
+	gap: 2px;
 }
 .cal-cols {
 	display: grid;
 	grid-template-columns: 56px repeat(var(--days), minmax(0, 1fr));
 }
+/* the hairline keeps the fixed day heads apart from the hours scrolling under them */
 .cal-heads {
 	flex: none;
-	padding: 0 8px 8px 0;
+	padding: 0 8px 0 0;
+	border-bottom: 1px solid var(--line);
 }
 .cal-head {
 	display: flex;
 	align-items: baseline;
 	gap: 6px;
-	padding: 0 6px;
+	padding: 6px 10px 8px;
+	border-radius: var(--radius-md) var(--radius-md) 0 0;
+	text-align: left;
 }
 .cal-weekday {
 	color: var(--subtle);
 }
 .cal-daynum {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	font-weight: 600;
 }
 .cal-head.today,
@@ -94,8 +121,10 @@
 	right: 10px;
 	top: calc((var(--at) - var(--first)) * var(--k) - 8px);
 }
+/* a hairline between the days, as the owner asked */
 .cal-day {
 	position: relative;
+	border-left: 1px solid var(--line);
 }
 .cal-event {
 	position: absolute;
@@ -107,9 +136,9 @@
 	flex-direction: column;
 	overflow: hidden;
 	padding: 4px 8px;
-	border-radius: 8px;
+	border-radius: var(--radius-md);
 	background: var(--cal-bg);
-	font-size: 12px;
+	font-size: var(--fs-label);
 	line-height: 1.35;
 	text-align: left;
 }
@@ -135,6 +164,123 @@
 	transform-origin: top left;
 }
 
+/* month: a grid of days, a hairline between them */
+.cal-month {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 0 var(--space-4) var(--space-4);
+}
+.cal-month-row {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.cal-month-heads {
+	padding: 0 0 6px;
+}
+.cal-month-heads > span {
+	padding: 0 10px;
+}
+/* the month is a grid of days: its lines are how a calendar month is read */
+.cal-month-week {
+	flex: 1;
+	min-height: 96px;
+	border-top: 1px solid var(--line);
+}
+.cal-month-day {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 3px;
+	padding: 6px 6px 8px;
+	text-align: left;
+	border-left: 1px solid var(--line);
+	border-radius: 0;
+}
+.cal-month-day:first-child {
+	border-left: 0;
+}
+.cal-month-day:hover {
+	background: var(--hover);
+}
+.cal-month-num {
+	align-self: flex-start;
+	min-width: 26px;
+	height: 26px;
+	display: grid;
+	place-items: center;
+	border-radius: var(--radius-full);
+	font-size: var(--fs-small);
+	font-weight: 600;
+}
+.cal-month-day.out .cal-month-num {
+	color: var(--subtle);
+	font-weight: 400;
+}
+.cal-month-day.today .cal-month-num {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+.cal-month-day.on {
+	background: var(--hover);
+}
+.cal-chip {
+	display: block;
+	padding: 2px 6px;
+	border-radius: var(--radius-sm);
+	background: var(--cal-bg);
+	font-size: var(--fs-label);
+	line-height: 1.4;
+}
+.cal-chip-time {
+	color: var(--cal-fg);
+}
+
+/* year: twelve small months */
+.cal-year {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: var(--space-4);
+	align-content: start;
+	padding: var(--space-2) var(--space-6) var(--space-6);
+	overflow: auto;
+}
+.cal-year-month {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-3);
+	border-radius: var(--radius-lg);
+	text-align: left;
+}
+.cal-year-month:hover,
+.cal-year-month.on {
+	background: var(--hover);
+}
+.cal-year-grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 2px 0;
+	font-size: 11px;
+	text-align: center;
+}
+.cal-year-grid > span {
+	height: 22px;
+	display: grid;
+	place-items: center;
+	border-radius: var(--radius-full);
+}
+.cal-year-grid .busy {
+	font-weight: 600;
+	color: var(--accent-text);
+}
+.cal-year-grid .today {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
 /* the drawer: a floating panel at the right edge */
 .cal-drawer {
 	width: 400px;
@@ -145,7 +291,7 @@
 	display: flex;
 	flex-direction: column;
 	background: var(--surface);
-	border-radius: 14px;
+	border-radius: var(--radius-xl);
 	box-shadow: var(--shadow-pop);
 }
 .cal-drawer-head {
@@ -220,9 +366,6 @@
 	gap: 6px;
 	padding: 12px 14px 14px;
 }
-.cal-delete {
-	color: var(--bad);
-}
 .cal-save {
 	min-width: 96px;
 }
@@ -267,6 +410,40 @@
 }
 
 /* phone */
+/* on the phone the bar sits in the phone head (its padding is the head's); the modes take the
+   room the period buttons leave */
+.frame-phone .cal-bar {
+	padding: 0;
+	gap: var(--space-2);
+}
+.frame-phone .cal-modes {
+	flex: 1;
+	min-width: 0;
+	width: auto;
+}
+.cal-phone-scroll {
+	flex: 1;
+	min-height: 0;
+}
+.frame-phone .cal-month {
+	padding: 0 var(--space-2) var(--space-4);
+}
+.frame-phone .cal-month-week {
+	min-height: 64px;
+}
+.frame-phone .cal-chip {
+	font-size: 10px;
+	padding: 1px 3px;
+}
+.frame-phone .cal-chip-time {
+	display: none;
+}
+.frame-phone .cal-year {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	padding: var(--space-2) var(--space-3) var(--space-6);
+	gap: var(--space-2);
+	overflow: visible;
+}
 .cal-phone {
 	flex: 1;
 	min-height: 0;
@@ -275,10 +452,6 @@
 }
 .cal-phone-title {
 	font-size: 26px;
-}
-.cal-today {
-	height: 40px;
-	border-radius: 12px;
 }
 .cal-strip {
 	position: relative;
@@ -321,13 +494,13 @@
 	gap: 12px;
 	width: 100%;
 	padding: 12px 14px;
-	border-radius: 14px;
+	border-radius: var(--radius-xl);
 	background: var(--cal-bg);
 	line-height: 1.4;
 	text-align: left;
 }
 .cal-agenda-row .cal-title {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 }
 .cal-start {
 	width: 44px;
@@ -339,7 +512,7 @@
 	text-align: center;
 }
 .cal-strip .selection-mark {
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 }
 .cal-agenda-row .cal-sub {
 	color: var(--cal-fg);
@@ -348,4 +521,7 @@
 	max-height: 85dvh;
 	display: flex;
 	flex-direction: column;
+}
+.cal-outcome {
+	padding: 0 20px;
 }

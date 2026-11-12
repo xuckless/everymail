@@ -18,7 +18,7 @@
 	font-size: 28px;
 }
 .sign-in-lede {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	max-width: 340px;
 }
 .sign-in-actions {

@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use everymail_engine::{BODY_SANDBOX, Engine};
+use everymail_engine::{BODY_SANDBOX, Demo, Engine};
 use tauri::{
     Manager, State,
     http::{
@@ -57,11 +57,24 @@ fn body(engine: &Engine, uri: &tauri::http::Uri) -> Response<Vec<u8>> {
 fn main() {
     let backend =
         std::env::var("EVERYMAIL_BACKEND_URL").unwrap_or_else(|_| "http://127.0.0.1:8787".into());
-    let engine = Engine::new(&backend, |task| {
-        tauri::async_runtime::spawn(task);
-    });
     tauri::Builder::default()
-        .manage(engine)
+        .setup(move |app| {
+            // The local database lives in the app's data directory and survives relaunch.
+            let directory = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&directory)?;
+            let database = directory.join("replica.sqlite3");
+            // The stand-in Backend serves the engine until the real one is built.
+            let engine = Engine::new(
+                &backend,
+                |task| {
+                    tauri::async_runtime::spawn(task);
+                },
+                Some(&database.to_string_lossy()),
+                Box::new(Demo::new()),
+            )?;
+            app.manage(engine);
+            Ok(())
+        })
         .register_uri_scheme_protocol("body", |context, request| {
             body(&context.app_handle().state::<Engine>(), request.uri())
         })

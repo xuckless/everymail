@@ -1,28 +1,9 @@
-.quarantine-reason {
-	color: var(--bad);
-}
-.quarantine-empty {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	padding: 48px 16px;
-	text-align: center;
-}
-.quarantine-empty .ok {
-	color: var(--ok);
-}
-
-.quarantine-delete {
-	color: var(--bad);
-}
 .quarantine-why {
 	display: flex;
 	gap: var(--space-3);
 	padding: 14px var(--space-4);
 }
 .quarantine-shield {
-	color: var(--bad);
 	margin-top: 3px;
 }
 .quarantine-why-text {
@@ -31,7 +12,7 @@
 	gap: var(--space-1);
 }
 .quarantine-reason-text {
-	font-size: 14px;
+	font-size: var(--fs-body);
 	line-height: 1.55;
 }
 
@@ -59,19 +40,12 @@
 	min-width: 0;
 }
 .quarantine-subject {
-	font-size: 15px;
-}
-.quarantine-card .quarantine-reason {
-	line-height: 1.45;
+	font-size: var(--fs-reading);
 }
 .quarantine-card-actions {
 	display: flex;
 	gap: var(--space-2);
 	margin-top: 6px;
-}
-.quarantine-card-actions .btn {
-	height: 44px;
-	border-radius: 12px;
 }
 .quarantine-card-actions .soft {
 	flex: 1;
@@ -85,21 +59,4 @@
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-}
-.quarantine-phone-head {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding: 50px 8px 10px;
-}
-.quarantine-phone-head > .sm {
-	padding: 0 8px;
-}
-.quarantine-phone-bar {
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
-}
-.quarantine-phone-title {
-	font-size: 26px;
 }

@@ -38,6 +38,7 @@ export function MailListRow({
 	account,
 	time,
 	onSelect,
+	tabStop = true,
 	actions,
 	children,
 }: {
@@ -50,6 +51,8 @@ export function MailListRow({
 	account: string;
 	time: string;
 	onSelect: () => void;
+	// In a SelectList only one row's control is tabbable (SelectList.tsx, tabStop).
+	tabStop?: boolean;
 	actions?: ReactNode;
 	children: ReactNode;
 }) {
@@ -61,6 +64,7 @@ export function MailListRow({
 				type="button"
 				className="row-main"
 				data-select
+				tabIndex={tabStop ? 0 : -1}
 				aria-current={selected ? "true" : undefined}
 				onClick={onSelect}
 			>
@@ -79,19 +83,16 @@ export function MailListRow({
 // The reading pane: its toolbar, then the selected mail, old and new overlapping (keyed by `id`).
 export function ReadingPane({
 	id,
-	bar,
+	toolbar,
 	children,
 }: {
 	id: string;
-	bar: ReactNode;
+	toolbar: ReactNode;
 	children: ReactNode;
 }) {
 	return (
 		<section className="panel read-pane" aria-label="Reading pane">
-			<div className="read-bar">
-				<span className="grow" />
-				{bar}
-			</div>
+			{toolbar}
 			<div className="scroll read-scroll">
 				<Overlap id={id} className="read-stack">
 					{children}

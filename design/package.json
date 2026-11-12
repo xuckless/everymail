@@ -5,12 +5,15 @@
 	"exports": {
 		"./components.css": "./components.css",
 		"./plugin": "./plugin.ts",
+		"./tokens.json": "./tokens.json",
+		"./brands": "./brands.ts",
 		"./logos.svg": "./logos.svg",
 		"./icons.svg": "./icons.svg"
 	},
 	"dependencies": {
 		"@fontsource-variable/geist": "^5.3.0",
-		"@fontsource-variable/geist-mono": "^5.3.0"
+		"@fontsource-variable/geist-mono": "^5.3.0",
+		"@fontsource/inter": "^5.3.0"
 	},
 	"devDependencies": {
 		"vite": "^8.3.8"

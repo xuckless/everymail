@@ -1,15 +1,40 @@
-// AGENTS.md, State ownership: React state lives only in src/presentation.ts, the allowlist.
+// AGENTS.md, State ownership: React state lives only in frontend/src/presentation.ts, the
+// allowlist. Everything that can hold state across renders is matched here: the React state hooks
+// however they are imported (named, aliased or through a namespace), refs written by code, class
+// component state, module-level `let`, browser storage, and the document root or `dataset` written
+// as a place to keep values.
 language js
 
 or {
-	`useState($args)`,
-	`useReducer($args)`,
-	`useSyncExternalStore($args)`,
+	`import { $names } from $source` where {
+		$source <: r"[\"']react[\"']",
+		$names <: contains r"^(?:useState|useReducer|useSyncExternalStore|useOptimistic|useActionState|useTransition|useDeferredValue|Component|PureComponent)$"
+	},
 	`$_.useState($args)`,
 	`$_.useReducer($args)`,
 	`$_.useSyncExternalStore($args)`,
+	`$_.useOptimistic($args)`,
+	`$_.useActionState($args)`,
+	`$_.useTransition($args)`,
+	`$_.Component`,
+	`$_.PureComponent`,
 	`useRef($value)` where { $value <: not `null` },
 	`useRef<$type>($value)` where { $value <: not `null` },
+	`$_.current = $_`,
+	`class $_ extends $_ { $_ }`,
+	// module-level `let`: a JS code snippet cannot spell a declaration, so the node kind and its text
+	JsVariableDeclaration() as $let where {
+		$let <: r"^let\s[\s\S]*",
+		$let <: not within JsFunctionBody()
+	},
+	`localStorage`,
+	`sessionStorage`,
+	`indexedDB`,
+	`$_.dataset.$_ = $_`,
+	`delete $_.dataset.$_`,
+	`document.documentElement.style.$_($_)`,
+	`document.documentElement.classList.$_($_)`,
+	`document.documentElement.setAttribute($_)`,
 	`import $_ from $source` where {
 		$source <: or {
 			includes "zustand",
@@ -25,6 +50,6 @@ or {
 		}
 	}
 } as $state where {
-	$filename <: not r".*src/presentation\.ts$",
-	register_diagnostic(span=$state, message="State outside src/presentation.ts: declare it in the presentation allowlist, or it belongs in the engine")
+	$filename <: not r"(?:.*/)?frontend/src/presentation\.ts",
+	register_diagnostic(span=$state, message="State outside frontend/src/presentation.ts: declare it in the presentation allowlist, or it belongs in the engine")
 }

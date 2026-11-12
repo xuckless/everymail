@@ -11,10 +11,12 @@ The one source of everything visual that the app and the landing site share. Add
 
 ```ts
 import "virtual:tokens.css"; // first: the variables
-import "@everymail/design/components.css"; // then the classes, Geist and Geist Mono
+import "@everymail/design/components.css"; // then the classes, Geist, Geist Mono and Inter (the wordmark)
 ```
 
-Theme: the system preference applies by default. `document.documentElement.dataset.theme = "dark" | "light"` overrides it; remove the attribute for System. The theme is engine state; the attribute is only how it is applied. Where View Transitions are missing, add the `theme-fade` class to the root before changing the attribute and remove it when the body's background transition ends: colours crossfade.
+Theme: the system preference applies by default. `document.documentElement.dataset.theme = "dark" | "light"` overrides it; remove the attribute for System. The theme is engine state; the attribute is only how it is applied. Where View Transitions are missing, add the `theme-fade` class to the root before changing the attribute and remove it when the body's background transition ends: colours crossfade. With View Transitions, the app animates `::view-transition-new(root)`'s clip path as a circle from the pressed control over `t-reveal`.
+
+Type: each style in `tokens.json` is three variables, `--fs-<name>`, `--lh-<name>` and `--fw-<name>` (for example `--fs-h1`). Under `prefers-reduced-motion` every duration variable is `duration.reduced`.
 
 Density: `document.documentElement.dataset.density = "compact" | "comfortable" | "roomy"` sets `--row-pad` (`.mrow` padding), `--row-min` (a mail list row's height) and `--menu-row-min` (`.menu-row`). Comfortable is the default.
 
@@ -30,12 +32,12 @@ import logos from "@everymail/design/logos.svg?url";
 
 In Astro the same two imports work in the frontmatter.
 
-Icon ids: inbox, calendar, briefing, clock, settings, check, plus, chevron-left, chevron-right, chevron-down, compose, archive, star, send, receipt, quarantine, shield, close, play, retry, search, summary, more, lock, snooze, link-off, arrow-right, forward.
+Icon ids: inbox, calendar, briefing, clock, settings, check, plus, chevron-left, chevron-right, chevron-down, compose, archive, star, send, receipt, quarantine, shield, close, play, retry, search, summary, more, lock, snooze, link-off, arrow-right, forward, reply, reply-all, trash, folder, unread, sidebar, approvals, file, file-text, file-zip, image, table, presentation. `.i.filled` fills an icon, as a starred star.
 
 Logo ids: mark, gmail, outlook, icloud, yahoo, fastmail, imap, google, microsoft, gcal, anthropic, openai, gemini, openrouter.
 
-Motion classes follow the rules in `AGENTS.md`. State is a class the engine's view decides: `.in`/`.out` on `.pop`, `.sheet`, `.scrim`, `.drawer-r`; `.hide` on the leaving child of `.stack` (text) or `.swap` (icons); `.stagger` with `style="--i: n"` delays row `n` by 30 ms.
+Motion classes follow the rules in `AGENTS.md`. State is a class the engine's view decides: `.in`/`.out` on `.pop`, `.sheet`, `.scrim`, `.drawer-r`; `.hide` on the leaving child of `.stack` (text) or `.swap` (icons); `.stagger` with `style="--i: n"` delays row `n` by 30 ms (the site); the app sets that delay inline (`frontend/src/ui/stagger.ts`).
 
-`.stagger` comes after the entrance classes (`.row-in`, `.settle`, `.fade-in`), so it combines with any of them.
+`.stagger` comes after the entrance classes (`.row-in`, `.settle`), so it combines with any of them.
 
-Small pieces shared by the app and the site: `.field` (a label, an input, textarea or select, and an optional hint; one tone up on a `.sheet` or `.drawer-r`), `.logo-tile` (a logo on its own tile), `.link` (a text button that reads as a link) and `.sr-only` (read by screen readers, not shown).
+Small pieces shared by the app and the site: `.field` (a label, an input, textarea or select, and an optional hint; one tone up on a `.sheet` or `.drawer-r`), `.logo-tile` (a logo on its own tile), `.link` (a text button that reads as a link), `.sr-only` (read by screen readers, not shown), `.grow`, `.wordmark`, `.logo`, and the status colour words `.ok`, `.bad` and `.warn`.

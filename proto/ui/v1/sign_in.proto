@@ -2,6 +2,28 @@ syntax = "proto3";
 
 package ui.v1;
 
+import "ui/v1/common.proto";
+
 // The sign-in screen: continue with Google or Microsoft (Intent.continue_with_provider).
-// It shows no data and has no states yet; the session is a later roadmap task.
-message SignInView {}
+message SignInView {
+  oneof state {
+    SignInIdle idle = 1;
+    SigningIn signing_in = 2;
+    SignInFailed failed = 3;
+  }
+}
+
+message SignInIdle {}
+
+// The provider's sign-in is open; the buttons are disabled. Intent.cancel_sign_in stops waiting.
+message SigningIn {
+  SignInProvider provider = 1;
+  // "Waiting for Google"
+  string text = 2;
+}
+
+// The sign-in did not finish; the buttons work again.
+message SignInFailed {
+  // "Google did not answer in time. Try again"
+  string reason = 1;
+}

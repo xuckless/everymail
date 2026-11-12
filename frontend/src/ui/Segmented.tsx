@@ -1,7 +1,7 @@
 import { m } from "motion/react";
-import type { MouseEvent, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { cx } from "./cx";
-import { move } from "./motion";
+import { useTiming } from "./motion";
 
 // The indicator stretches 12% on its way, as the switch's knob does (motion rule 5); with no
 // segment selected it is hidden.
@@ -33,12 +33,13 @@ export function Segmented({
 	touch?: boolean;
 	className?: string;
 }) {
+	const { move } = useTiming();
 	const at = segments.findIndex((segment) => segment.selected);
 	const classes = cx("seg", touch && "touch", className);
 	const indicator = (
 		<m.span
 			className="ind"
-			style={{ width: `calc((100% - 6px) / ${segments.length})` }}
+			style={{ "--n": segments.length } as CSSProperties}
 			initial={false}
 			animate={String(at)}
 			variants={{

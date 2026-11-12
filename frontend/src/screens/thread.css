@@ -1,45 +1,17 @@
 .thread-main {
 	flex: 1;
 }
-.thread-bar {
-	height: 52px;
-	flex: none;
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
-	padding: 0 10px 0 var(--space-3);
-}
 .thread-scroll {
 	flex: 1;
 	min-height: 0;
 }
 .thread-body {
-	max-width: 720px;
+	max-width: 880px;
 	margin: 0 auto;
-	padding: var(--space-2) 40px 48px;
+	padding: var(--space-6) var(--space-6) var(--space-8);
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
-}
-.message {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-.message-head {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	width: 100%;
-	padding: 6px 0;
-}
-.message-who {
-	min-width: 0;
-}
-.message-open {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-3);
+	gap: var(--space-4);
 }
 
 /* Reply with AI */
@@ -49,15 +21,20 @@
 	flex: none;
 }
 .reply-head {
-	height: 52px;
 	flex: none;
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
+}
+/* in the desktop aside the head is a fixed bar; the hairline keeps it apart from the content
+   scrolling under it (separation of concerns: what the panel is, then what it offers) */
+.reply-head:not(.reply-head-sheet) {
+	height: 52px;
 	padding: 0 var(--space-3) 0 18px;
+	border-bottom: 1px solid var(--line);
 }
 .reply-title {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 }
 .model-chip {
 	gap: var(--space-2);
@@ -124,26 +101,22 @@
 	display: flex;
 	flex-direction: column;
 }
-.thread-phone-bar {
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
-	padding: 44px var(--space-2) var(--space-1);
+/* the toolbar fills the phone bar, clear of the status corner */
+.thread-phone .phone-bar .mail-toolbar {
+	flex: 1;
+	padding: 0 48px 0 0;
+	gap: 0;
 }
 .thread-phone-scroll {
 	flex: 1;
 	min-height: 0;
 }
 .thread-phone .thread-body {
-	padding: var(--space-1) var(--space-4) var(--space-6);
-	gap: var(--space-4);
+	padding: var(--space-4) var(--space-3) var(--space-6);
+	gap: var(--space-3);
 }
 .thread-phone .thread-subject {
 	font-size: 22px;
-}
-.thread-phone .message-head {
-	min-height: 48px;
-	padding: 0;
 }
 .thread-phone-foot {
 	flex: none;
@@ -157,16 +130,16 @@
 	justify-content: flex-start;
 	color: var(--muted);
 }
-.raised {
-	background: var(--raised);
-}
 .phone-reply {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
 }
-.reply-head-phone {
-	display: flex;
+.reply-head-sheet .reply-title {
+	font-size: var(--fs-h2);
+}
+/* writing or failed: the line and its Stop or Clear beside it */
+.generation-line {
+	flex-direction: row;
 	align-items: center;
-	gap: var(--space-2);
 }

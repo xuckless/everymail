@@ -10,6 +10,9 @@ message QuarantineView {
     QuarantineEmpty empty = 1;
     QuarantineList list = 2;
   }
+  // "Caught by Security Guard or sent by a blocked sender. Each copy is dropped 30 days after it
+  // lands here"
+  string lede = 3;
 }
 
 message QuarantineEmpty {}

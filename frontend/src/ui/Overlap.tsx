@@ -1,7 +1,7 @@
 import { AnimatePresence, m } from "motion/react";
 import type { ReactNode } from "react";
 import { cx } from "./cx";
-import { enter, exit } from "./motion";
+import { useTiming } from "./motion";
 
 // Old and new states overlap: when `id` changes, the old content fades out with a slight blur
 // while the new fades in, in the same grid cell (`.stack`). Key it by what the content shows: a
@@ -18,6 +18,7 @@ export function Overlap({
 	className?: string;
 	children: ReactNode;
 }) {
+	const { enter, exit } = useTiming();
 	return (
 		<div className={cx("stack", className)}>
 			<AnimatePresence initial={false}>

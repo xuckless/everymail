@@ -82,6 +82,10 @@ message Stat {
 
 // One action an agent may take, and its level.
 message Permission {
+  // The action's stable id, which Intent.set_agent_permission, set_builder_permission and
+  // set_default_permission take: "send", "read-label".
+  string id = 6;
+  // The action's label: "Send"
   string action = 1;
   // Shown under the action; may be empty. Replaced by the reason when Auto is not offered.
   string hint = 2;
@@ -121,13 +125,6 @@ message AgentWaiting {}
 // Switched off by the user.
 message AgentDeactivated {}
 
-message AccountStatus {
-  oneof state {
-    AccountSynced synced = 1;
-    AccountSignInExpired sign_in_expired = 2;
-  }
-}
-
 message AccountSynced {
   // "Synced 1 min ago"
   string label = 1;
@@ -138,12 +135,19 @@ message AccountSignInExpired {
   string label = 1;
 }
 
-// Scribe's summary of a thread.
-message Summary {
+// The state of an account.
+message AccountState {
   oneof state {
-    SummaryReady ready = 1;
-    SummaryOff off = 2;
+    AccountSynced synced = 1;
+    AccountSignInExpired sign_in_expired = 2;
+    AccountSyncing syncing = 3;
   }
+}
+
+// Its first sync is under way.
+message AccountSyncing {
+  // "Syncing · 64%"
+  string label = 1;
 }
 
 message SummaryReady {
@@ -152,6 +156,28 @@ message SummaryReady {
 
 // Scribe is off because no model key is set.
 message SummaryOff {}
+
+// Scribe's summary of a thread.
+message ScribeSummary {
+  oneof state {
+    SummaryReady ready = 1;
+    SummaryOff off = 2;
+    SummaryPending pending = 3;
+    SummaryFailed failed = 4;
+  }
+}
+
+// Scribe could not write it.
+message SummaryFailed {
+  // "Scribe did not answer in time"
+  string reason = 1;
+}
+
+// Scribe is writing it, the first time the thread is opened.
+message SummaryPending {
+  // "Scribe is reading the thread"
+  string label = 1;
+}
 
 // A reply an agent drafted that waits for approval, shown in the thread it answers.
 message AgentDraft {
@@ -167,6 +193,8 @@ message ApprovalState {
   oneof state {
     ApprovalWaiting waiting = 1;
     ApprovalDone done = 2;
+    ApprovalResolving resolving = 3;
+    ApprovalDeclined declined = 4;
   }
 }
 
@@ -174,6 +202,15 @@ message ApprovalWaiting {}
 
 // Approved and carried out.
 message ApprovalDone {}
+
+// Answered; the Backend is carrying it out.
+message ApprovalResolving {}
+
+// Declined, by the user or because nobody answered for 7 days.
+message ApprovalDeclined {
+  // "You declined. Nothing was sent", "Nobody answered for 7 days"
+  string reason = 1;
+}
 
 // A calendar invitation as shown in a thread, the calendar's sidebar and its popover.
 message Invitation {
@@ -188,7 +225,19 @@ message Invitation {
   // "Waiting for your answer · Laurentian calendar"
   string status = 6;
   InvitationAnswer answer = 7;
+  // What the calendar's card offers.
+  oneof prompt {
+    InvitationAsk ask = 8;
+    InvitationChange change = 9;
+  }
 }
+
+// The answers are offered: it is unanswered, or the user asked to change the answer.
+message InvitationAsk {}
+
+// Answered: Change (Intent.open_disclosure with the event id) offers the answers again; answering
+// closes it.
+message InvitationChange {}
 
 message InvitationAnswer {
   oneof state {
@@ -207,3 +256,241 @@ message InvitationAccepted {}
 message InvitationTentative {}
 
 message InvitationDeclined {}
+
+// The desktop sidebar, collapsed to its icons or expanded. A preference that survives relaunch.
+enum Sidebar {
+  SIDEBAR_UNSPECIFIED = 0;
+  SIDEBAR_EXPANDED = 1;
+  SIDEBAR_COLLAPSED = 2;
+}
+
+// Something an agent's result, run or answer is about.
+message Reference {
+  // "Slides for Thursday, can you take section 3?", "COSC 4456 exam · Thu 14:00"
+  string label = 1;
+  oneof target {
+    // Intent.open_thread.
+    ThreadReference thread = 2;
+    // Intent.select_event, which opens the calendar on it.
+    EventReference event = 3;
+    // Intent.open_approvals.
+    ApprovalReference approval = 4;
+    // Intent.select_quarantined, which opens Quarantine on it.
+    QuarantinedReference quarantined = 5;
+  }
+}
+
+message ThreadReference {
+  string thread_id = 1;
+}
+
+message EventReference {
+  string event_id = 1;
+}
+
+message ApprovalReference {
+  string approval_id = 1;
+}
+
+message QuarantinedReference {
+  string quarantined_id = 1;
+}
+
+// A file attached to a message. Its bytes are not served yet, so it has no URL: the Frontend shows
+// it and opens nothing.
+message Attachment {
+  string id = 1;
+  // "results-section-3.pptx"
+  string name = 2;
+  // "2.4 MB"
+  string size = 3;
+  AttachmentKind kind = 4;
+}
+
+// Picks the attachment's icon.
+enum AttachmentKind {
+  ATTACHMENT_KIND_UNSPECIFIED = 0;
+  ATTACHMENT_KIND_IMAGE = 1;
+  ATTACHMENT_KIND_PDF = 2;
+  ATTACHMENT_KIND_DOCUMENT = 3;
+  ATTACHMENT_KIND_SPREADSHEET = 4;
+  // A slide deck.
+  ATTACHMENT_KIND_PRESENTATION = 5;
+  ATTACHMENT_KIND_ARCHIVE = 6;
+  // An .ics file.
+  ATTACHMENT_KIND_CALENDAR = 7;
+  ATTACHMENT_KIND_OTHER = 8;
+}
+
+// A time of day a control offers, every half hour.
+message TimeChoice {
+  // Minutes after midnight.
+  uint32 minute = 1;
+  // "8:30"
+  string label = 2;
+}
+
+// What the user can do to a thread where it is, in the reading pane and the thread view. Read and
+// unread are Intent.set_unread, a message's star Intent.set_starred.
+message MailActions {
+  reserved 1;
+  reserved "location";
+  bool unread = 2;
+  // Intent.snooze_thread; none in the trash.
+  repeated SnoozeChoice snooze = 3;
+  // Intent.move_thread, the current place first marked. Moving to the inbox restores a thread.
+  repeated MoveChoice move = 4;
+  // Archive is offered (Intent.archive_thread): not in the archive or the trash.
+  bool archive = 5;
+  // Delete is offered (Intent.trash_thread): not in the trash.
+  bool trash = 6;
+}
+
+// The snooze presets.
+enum SnoozePreset {
+  SNOOZE_PRESET_UNSPECIFIED = 0;
+  // 18:00 today, or three hours from now once past 15:00.
+  SNOOZE_PRESET_LATER_TODAY = 1;
+  // 8:00 tomorrow.
+  SNOOZE_PRESET_TOMORROW = 2;
+  // Saturday 9:00.
+  SNOOZE_PRESET_THIS_WEEKEND = 3;
+  // Monday 8:00.
+  SNOOZE_PRESET_NEXT_WEEK = 4;
+}
+
+message SnoozeChoice {
+  SnoozePreset preset = 1;
+  // "Later today"
+  string label = 2;
+  // "18:00", "Sat 9:00": when the Backend says the preset ends.
+  string when = 3;
+}
+
+message MoveChoice {
+  oneof to {
+    MoveToInbox inbox = 1;
+    string folder_id = 2;
+  }
+  // "Inbox", "Receipts"
+  string label = 3;
+  // The thread is there now.
+  bool current = 4;
+}
+
+message MoveToInbox {}
+
+// A short-lived outcome of something the user did, for the Frontend to animate from: a pulse on
+// success, a shake and the reason on failure. Each lasts about two seconds; the engine then sends
+// the view without it. A resolved item stays in its list while its outcome lasts.
+message ActionOutcome {
+  ActionTarget target = 1;
+  oneof state {
+    OutcomeDone done = 2;
+    OutcomeFailed failed = 3;
+  }
+}
+
+message OutcomeDone {
+  // "Sent", "Saved", "Added"
+  string text = 1;
+}
+
+message OutcomeFailed {
+  // "A folder named Receipts exists"
+  string reason = 1;
+}
+
+// What an outcome is about: an item by its id, or a form by its kind.
+message ActionTarget {
+  oneof target {
+    string thread_id = 1;
+    string approval_id = 3;
+    string event_id = 5;
+    string agent_id = 6;
+    string draft_id = 7;
+    string account_id = 9;
+    ModelProvider key = 10;
+    Form form = 11;
+  }
+}
+
+// A form with no id of its own.
+enum Form {
+  FORM_UNSPECIFIED = 0;
+  // The sidebar's new folder field.
+  FORM_NEW_FOLDER = 1;
+  FORM_NEW_RULE = 2;
+  FORM_NEWS_TOPIC = 3;
+  FORM_AGENT_BUILDER = 4;
+  // The builder's custom interval.
+  FORM_BUILDER_INTERVAL = 5;
+  FORM_IMAP = 6;
+  FORM_EXPORT = 7;
+  FORM_SEARCH = 8;
+  FORM_BUDGET = 9;
+  // The calendar's unsaved new event.
+  FORM_NEW_EVENT = 10;
+}
+
+// The bar at the bottom of the screen: one at a time.
+message Notice {
+  oneof state {
+    NoNotice none = 1;
+    UndoNotice undo = 2;
+    InfoNotice info = 3;
+  }
+}
+
+message NoNotice {}
+
+// Something just done that Intent.undo takes back while the notice shows.
+message UndoNotice {
+  // "Archived", "Sending to Mira"
+  string text = 1;
+  // "Undo"
+  string action = 2;
+  // How long the notice stays, from when this view was sent: the Frontend's progress bar.
+  uint32 remaining_ms = 3;
+}
+
+// Closed with Intent.dismiss_notice, or gone after a few seconds.
+message InfoNotice {
+  // "Sent to Mira", "Mira's slides moved to Receipts"
+  string text = 1;
+}
+
+// A mail to answer an invitation with.
+enum InvitationReply {
+  INVITATION_REPLY_UNSPECIFIED = 0;
+  INVITATION_REPLY_ACCEPT = 1;
+  INVITATION_REPLY_MAYBE = 2;
+  INVITATION_REPLY_DECLINE = 3;
+}
+
+// A part of a screen the user opens and closes with Intent.open_disclosure and
+// Intent.close_disclosure, held by the engine like an expanded message.
+message Disclosure {
+  oneof state {
+    DisclosureClosed closed = 1;
+    DisclosureOpen open = 2;
+  }
+}
+
+message DisclosureClosed {}
+
+message DisclosureOpen {}
+
+// What a disclosure is about.
+message DisclosureTarget {
+  oneof target {
+    // FORM_NEW_FOLDER, FORM_NEW_RULE or FORM_BUDGET; any other form is a decode error.
+    Form form = 1;
+    // A set key being replaced.
+    ModelProvider key = 2;
+    // An answered invitation being changed.
+    string event_id = 3;
+    // An agent run shown with its steps.
+    string run_id = 4;
+  }
+}

@@ -1,16 +1,44 @@
-import { useSend } from "../engine";
+import { type IntentKind, unset, useSend } from "../engine";
 import { Destination, type Navigation } from "../gen/ui/v1/shell_pb";
 import { cx } from "../ui/cx";
 import { Dot } from "../ui/Dot";
-import { Icon } from "../ui/Icon";
+import { Icon, type IconName } from "../ui/Icon";
 import { SelectionMark, useSelectionGroup } from "../ui/Selection";
-import { places } from "./places";
+import { allInboxes } from "./places";
 
 // The phone's bottom navigation: Inbox, Calendar, Briefing and Agents, with one highlight that
 // moves ease-in-out to the current destination. Settings has no tab in the design.
-const tabs = places.filter(
-	(place) => place.destination !== Destination.SETTINGS,
-);
+const tabs: {
+	destination: Destination;
+	label: string;
+	icon: IconName;
+	intent: IntentKind;
+}[] = [
+	{
+		destination: Destination.INBOX,
+		label: "Inbox",
+		icon: "inbox",
+		intent: allInboxes,
+	},
+	{
+		destination: Destination.CALENDAR,
+		label: "Calendar",
+		icon: "calendar",
+		intent: { case: "openCalendar", value: {} },
+	},
+	{
+		destination: Destination.BRIEFING,
+		label: "Briefing",
+		icon: "briefing",
+		intent: { case: "openBriefing", value: {} },
+	},
+	{
+		destination: Destination.AGENTS,
+		label: "Agents",
+		icon: "clock",
+		intent: { case: "openAgents", value: {} },
+	},
+];
 
 export function TabBar({ nav }: { nav: Navigation }) {
 	const send = useSend();
@@ -18,11 +46,24 @@ export function TabBar({ nav }: { nav: Navigation }) {
 	const badge = (destination: Destination) => {
 		switch (destination) {
 			case Destination.BRIEFING:
-				return nav.briefing?.unread && <Dot tone="unread" label="Unread" />;
+				return (
+					(nav.briefing ?? unset("Navigation.briefing")).unread && (
+						<Dot tone="unread" label="Unread" />
+					)
+				);
 			case Destination.AGENTS:
-				return nav.agentsWaiting && <Dot tone="wait" label="Waiting" />;
-			default:
+				return (
+					(nav.approvals ?? unset("Navigation.approvals")).waiting && (
+						<Dot tone="wait" label="Waiting" />
+					)
+				);
+			case Destination.NONE:
+			case Destination.INBOX:
+			case Destination.CALENDAR:
+			case Destination.SETTINGS:
 				return null;
+			case Destination.UNSPECIFIED:
+				return unset("Destination");
 		}
 	};
 	return (

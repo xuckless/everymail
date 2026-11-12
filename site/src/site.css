@@ -1,5 +1,4 @@
 @import "@everymail/design/components.css";
-@import "@fontsource/inter/latin-600.css";
 
 .wrap {
 	max-width: 1200px;
@@ -9,29 +8,13 @@
 .sec {
 	padding-bottom: 140px;
 }
-.grow {
-	flex: 1;
-}
-.logo {
-	flex: none;
-}
-.warn {
-	color: var(--warn);
-}
-.sr {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	overflow: hidden;
-	clip-path: inset(50%);
-}
 h2 {
-	font-size: 40px;
+	font-size: var(--fs-title);
 	line-height: 1.1;
 	font-weight: 600;
 }
 .lede {
-	font-size: 17px;
+	font-size: var(--fs-h2);
 	line-height: 1.6;
 	color: var(--muted);
 }
@@ -63,9 +46,7 @@ h2 {
 	align-items: center;
 	gap: 10px;
 }
-.wordmark {
-	font-family: var(--font-wordmark);
-	font-weight: 600;
+.brand .wordmark {
 	font-size: 18px;
 }
 .links {
@@ -92,7 +73,7 @@ h2 {
 	gap: 20px;
 }
 .hero h1 {
-	font-size: 64px;
+	font-size: var(--fs-display);
 	line-height: 1.04;
 	font-weight: 600;
 	max-width: 820px;
@@ -118,7 +99,7 @@ h2 {
 	padding: 0 var(--space-4);
 	border-radius: var(--radius-lg);
 	background: var(--raised);
-	font-size: 15px;
+	font-size: var(--fs-reading);
 }
 #join button {
 	height: 48px;
@@ -229,9 +210,6 @@ h2 {
 }
 
 /* native radios as segmented controls: the indicator follows the checked option */
-.seg .ind {
-	width: calc((100% - 6px) / var(--n));
-}
 .seg .opt:has(:checked) {
 	color: var(--text);
 }
@@ -287,7 +265,7 @@ h2 {
 }
 .agent-card .well {
 	padding: var(--space-4);
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	line-height: 1.6;
 	white-space: pre-line;
 }
@@ -298,7 +276,7 @@ h2 {
 }
 .stats b {
 	display: block;
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	font-weight: 500;
 }
 
@@ -319,13 +297,13 @@ h2 {
 	flex-direction: column;
 }
 .perm > span > :first-child {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 }
 .perm .seg {
 	width: 240px;
 }
 #queue-note {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 }
 
 .providers {
@@ -341,15 +319,6 @@ h2 {
 	display: flex;
 	align-items: center;
 	gap: var(--space-3);
-}
-.providers .tile > span:first-child {
-	width: 36px;
-	height: 36px;
-	border-radius: 10px;
-	display: grid;
-	place-items: center;
-	background: var(--overlay);
-	flex: none;
 }
 .providers .tile > span:last-child {
 	display: flex;
@@ -431,7 +400,7 @@ footer.wrap {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.hero h1 {
-		font-size: 40px;
+		font-size: var(--fs-title);
 	}
 	.tabs .opt {
 		padding: 0;

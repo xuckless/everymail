@@ -27,6 +27,21 @@ message InboxView {
     ReadingPreview preview = 5;
     NothingSelected nothing = 6;
   }
+  // Intent.search_mail and Intent.clear_search. While searching, the rows are the results.
+  oneof search {
+    NotSearching not_searching = 7;
+    SearchShown results = 8;
+  }
+  // The snooze menu of every row that is `snoozable` (Intent.snooze_thread).
+  repeated SnoozeChoice snooze = 9;
+}
+
+message NotSearching {}
+
+message SearchShown {
+  string query = 1;
+  // "3 results in All inboxes", "No results in Receipts"
+  string count = 2;
 }
 
 // A mailbox is sorted into categories (Intent.select_category).
@@ -38,18 +53,21 @@ message CategoryTab {
   InboxCategory category = 1;
   string label = 2;
   bool selected = 3;
+  // Unread in this tab: "3"; empty for none.
+  string unread = 4;
 }
 
 // A folder is not sorted into categories, so it shows no tabs.
 message Uncategorized {}
 
 message MailRow {
+  reserved 5;
+  reserved "note";
   string thread_id = 1;
   string from = 2;
   // The account it came to.
   MailProvider provider = 3;
   string subject = 4;
-  RowNote note = 5;
   // "9:41", "Yesterday"
   string time = 6;
   bool unread = 7;
@@ -57,7 +75,19 @@ message MailRow {
   bool selected = 8;
   // The account's name: "Personal". The provider logo's accessible label.
   string account = 9;
+  bool starred = 10;
+  oneof agent_note {
+    RowNote noted = 11;
+    NoRowNote none = 12;
+  }
+  // The latest message, for the row's star (Intent.set_starred).
+  string message_id = 13;
+  // The row offers InboxView.snooze: it is not in the trash.
+  bool snoozable = 14;
 }
+
+// No agent did anything with the mail worth a note.
+message NoRowNote {}
 
 // What an agent did with the mail.
 message RowNote {
@@ -77,19 +107,33 @@ enum NoteKind {
 
 // The latest message of the selected thread. "Open thread" is Intent.open_thread.
 message ReadingPreview {
-  reserved 3, 4;
+  reserved 3, 4, 6;
+  reserved "summary";
   string thread_id = 1;
   string subject = 2;
   // The latest message's sender: "Mira", "You"
   string from = 10;
   string time = 5;
-  Summary summary = 6;
   // A sandboxed iframe source; see ThreadView.MessageExpanded.body_url.
   string body_url = 7;
   // Usually none.
   repeated AgentDraft drafts = 8;
   // "to Laurentian"
   string to_line = 9;
+  // The latest message's recipients: "to you, Priya and Tomas"
+  string recipients = 11;
+  // Some message of the thread is starred.
+  bool starred = 12;
+  // "Inbox · For you"
+  string place = 13;
+  // The latest message's attachments.
+  repeated Attachment attachments = 14;
+  // The latest message's own subject: "Re: Slides for Thursday, can you take section 3?"
+  string message_subject = 15;
+  MailActions actions = 16;
+  // The latest message, for its star (Intent.set_starred) and Reply (Intent.open_composer).
+  string message_id = 17;
+  ScribeSummary scribe = 18;
 }
 
 // No row is selected, for example in an empty listing.

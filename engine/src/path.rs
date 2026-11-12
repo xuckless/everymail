@@ -1,9 +1,11 @@
-//! The web path of a route and its inverse: `/u/<n>/` followed by the view and, for a thread or an
-//! agent's chat, its id (docs/BACKEND.md, Landing page). `<n>` is 0 until several sign-ins are supported.
+//! The web path of a route and its inverse: `/u/<n>/` followed by the view and what it shows, such
+//! as a thread's id, an agent's id and pane, or the calendar's view and day (docs/BACKEND.md,
+//! Landing page). `<n>` is 0 until several sign-ins are supported.
 
 use crate::{
-    navigation::{Listing, Mailbox, Route},
-    proto::ui::v1::{InboxCategory, SettingsSection},
+    date::Date,
+    navigation::{Listing, Mailbox, Mode, Pane, PaneChoice, Route, Section},
+    proto::ui::v1::InboxCategory,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,6 +15,8 @@ pub enum Parsed {
 }
 
 const SIGN_IN: &str = "/sign-in";
+/// The site's root shows all inboxes.
+const ROOT: &str = "/";
 const USER: &str = "/u/0/";
 
 /// For you is a mailbox's own path; the other categories add a segment.
@@ -21,15 +25,39 @@ const CATEGORIES: [(InboxCategory, &str); 2] = [
     (InboxCategory::Reading, "reading"),
 ];
 
-const SECTIONS: [(SettingsSection, &str); 7] = [
-    (SettingsSection::Accounts, "accounts"),
-    (SettingsSection::AgentPermissions, "agent-permissions"),
-    (SettingsSection::Rules, "rules"),
-    (SettingsSection::BlockList, "block-list"),
-    (SettingsSection::Models, "models"),
-    (SettingsSection::Appearance, "appearance"),
-    (SettingsSection::YourData, "your-data"),
+const SECTIONS: [(Section, &str); 7] = [
+    (Section::Accounts, "accounts"),
+    (Section::AgentPermissions, "agent-permissions"),
+    (Section::Rules, "rules"),
+    (Section::BlockList, "block-list"),
+    (Section::Models, "models"),
+    (Section::Appearance, "appearance"),
+    (Section::YourData, "your-data"),
 ];
+
+const PANES: [(Pane, &str); 4] = [
+    (Pane::Results, "results"),
+    (Pane::Activity, "activity"),
+    (Pane::Chat, "chat"),
+    (Pane::Settings, "settings"),
+];
+
+const MODES: [(Mode, &str); 3] = [
+    (Mode::Week, "week"),
+    (Mode::Month, "month"),
+    (Mode::Year, "year"),
+];
+
+fn segment<T: PartialEq + Copy>(table: &[(T, &'static str)], value: T) -> &'static str {
+    table
+        .iter()
+        .find(|(v, _)| *v == value)
+        .map_or("", |(_, segment)| segment)
+}
+
+fn value<T: Copy>(table: &[(T, &str)], segment: &str) -> Option<T> {
+    table.iter().find(|(_, s)| *s == segment).map(|(v, _)| *v)
+}
 
 pub fn path(route: &Route) -> String {
     let view = match route {
@@ -46,18 +74,22 @@ pub fn path(route: &Route) -> String {
             }
         }
         Route::Inbox(Listing::Folder(id)) => format!("folder/{id}"),
+        Route::Inbox(Listing::Search { scope, .. }) => {
+            return path(&Route::Inbox((**scope).clone()));
+        }
         Route::Thread(id) => format!("thread/{id}"),
         Route::Agents => "agents".into(),
-        Route::AgentChat(id) => format!("agents/{id}/chat"),
-        Route::AgentBuilder => "agents/new".into(),
-        Route::Settings(section) => {
-            let segment = SECTIONS
-                .iter()
-                .find(|(s, _)| s == section)
-                .map_or("", |(_, segment)| segment);
-            format!("settings/{segment}")
+        Route::Agent(id, PaneChoice::Default) => format!("agents/{id}"),
+        Route::Agent(id, PaneChoice::Other(pane)) => {
+            format!("agents/{id}/{}", segment(&PANES, *pane))
         }
-        Route::Calendar => "calendar".into(),
+        Route::Approvals => "approvals".into(),
+        Route::AgentBuilder => "agents/new".into(),
+        Route::Settings(section) => format!("settings/{}", segment(&SECTIONS, *section)),
+        Route::Calendar(None) => "calendar".into(),
+        Route::Calendar(Some((mode, day))) => {
+            format!("calendar/{}/{}", segment(&MODES, *mode), day.id())
+        }
         Route::Quarantine => "quarantine".into(),
         Route::Briefing => "briefing".into(),
     };
@@ -65,8 +97,10 @@ pub fn path(route: &Route) -> String {
 }
 
 pub fn parse(path: &str) -> Parsed {
-    if path == SIGN_IN {
-        return Parsed::Route(Route::SignIn);
+    match path {
+        SIGN_IN => return Parsed::Route(Route::SignIn),
+        ROOT => return Parsed::Route(Route::Inbox(Listing::ALL)),
+        _ => {}
     }
     let segments: Vec<&str> = match path.strip_prefix(USER) {
         Some(view) => view.split('/').collect(),
@@ -94,12 +128,16 @@ pub fn parse(path: &str) -> Parsed {
         ["thread", id] if !id.is_empty() => Some(Route::Thread((*id).into())),
         ["agents"] => Some(Route::Agents),
         ["agents", "new"] => Some(Route::AgentBuilder),
-        ["agents", id, "chat"] if !id.is_empty() => Some(Route::AgentChat((*id).into())),
-        ["settings", segment] => SECTIONS
-            .iter()
-            .find(|(_, s)| s == segment)
-            .map(|(section, _)| Route::Settings(*section)),
-        ["calendar"] => Some(Route::Calendar),
+        ["agents", id] if !id.is_empty() => Some(Route::Agent((*id).into(), PaneChoice::Default)),
+        ["agents", id, pane] if !id.is_empty() && *id != "new" => {
+            value(&PANES, pane).map(|pane| Route::Agent((*id).into(), PaneChoice::Other(pane)))
+        }
+        ["approvals"] => Some(Route::Approvals),
+        ["settings", segment] => value(&SECTIONS, segment).map(Route::Settings),
+        ["calendar"] => Some(Route::Calendar(None)),
+        ["calendar", mode, day] => value(&MODES, mode)
+            .zip(Date::parse(day))
+            .map(|at| Route::Calendar(Some(at))),
         ["quarantine"] => Some(Route::Quarantine),
         ["briefing"] => Some(Route::Briefing),
         _ => None,
@@ -118,9 +156,10 @@ mod tests {
             Route::Inbox(Listing::Folder("receipts".into())),
             Route::Thread("t-slides".into()),
             Route::Agents,
-            Route::AgentChat("assistant".into()),
+            Route::Agent("assistant".into(), PaneChoice::Default),
             Route::AgentBuilder,
-            Route::Calendar,
+            Route::Approvals,
+            Route::Calendar(None),
             Route::Quarantine,
             Route::Briefing,
         ];
@@ -136,6 +175,11 @@ mod tests {
             )));
         }
         routes.extend(SECTIONS.map(|(section, _)| Route::Settings(section)));
+        routes.extend(
+            PANES.map(|(pane, _)| Route::Agent("gatekeeper".into(), PaneChoice::Other(pane))),
+        );
+        let day = Date::parse("2026-11-11").expect("a date");
+        routes.extend(MODES.map(|(mode, _)| Route::Calendar(Some((mode, day)))));
         routes
     }
 
@@ -176,12 +220,24 @@ mod tests {
             ),
             ("/u/0/thread/t-slides", Route::Thread("t-slides".into())),
             (
-                "/u/0/agents/assistant/chat",
-                Route::AgentChat("assistant".into()),
+                "/u/0/agents/assistant",
+                Route::Agent("assistant".into(), PaneChoice::Default),
+            ),
+            (
+                "/u/0/agents/job-tracker/activity",
+                Route::Agent("job-tracker".into(), PaneChoice::Other(Pane::Activity)),
+            ),
+            ("/u/0/approvals", Route::Approvals),
+            (
+                "/u/0/calendar/month/2026-12-01",
+                Route::Calendar(Some((
+                    Mode::Month,
+                    Date::parse("2026-12-01").expect("a date"),
+                ))),
             ),
             (
                 "/u/0/settings/block-list",
-                Route::Settings(SettingsSection::BlockList),
+                Route::Settings(Section::BlockList),
             ),
         ];
         for (text, route) in cases {
@@ -194,7 +250,7 @@ mod tests {
     fn unknown_paths_are_not_found() {
         for text in [
             "",
-            "/",
+            "//",
             "/u/0",
             "/u/0/",
             "/u/1/inbox",
@@ -206,10 +262,16 @@ mod tests {
             "/u/0/folder/",
             "/u/0/thread/",
             "/u/0/thread/a/b",
-            "/u/0/agents/edit",
-            "/u/0/agents/assistant",
+            "/u/0/agents/edit/x",
             "/u/0/agents//chat",
             "/u/0/agents/assistant/chat/",
+            "/u/0/agents/assistant/runs",
+            "/u/0/agents/new/chat",
+            "/u/0/approvals/a-ostra",
+            "/u/0/calendar/week",
+            "/u/0/calendar/day/2026-11-11",
+            "/u/0/calendar/week/2026-11-31",
+            "/u/0/calendar/week/2026-11-11/",
             "/u/0/settings/",
             "/u/0/settings/nope",
             "/u/0/body/m-1",

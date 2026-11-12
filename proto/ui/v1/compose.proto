@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// The mail being written, over any screen: Intent.open_composer opens it, Intent.close_composer
+// closes it and keeps the draft.
+message Composer {
+  oneof state {
+    ComposerClosed closed = 1;
+    ComposerOpen open = 2;
+  }
+}
+
+message ComposerClosed {}
+
+// The Frontend keeps the typed text and sends it with Intent.update_draft on a debounce; the
+// values here are the saved draft.
+message ComposerOpen {
+  string draft_id = 1;
+  // "New message", "Reply to Mira", "Forward"
+  string title = 2;
+  // The accounts it can be sent from (Intent.set_draft_account), one selected.
+  repeated AccountChoice from = 3;
+  // "mira@laurentian.ca, Priya"
+  string to = 4;
+  string subject = 5;
+  string body = 6;
+  // Intent.attach_file, and Intent.remove_attachment by id.
+  repeated Attachment attachments = 7;
+  // "Saved 9:52"
+  string saved = 8;
+  // Send later (Intent.send_draft_later).
+  repeated SendLaterChoice send_later = 9;
+}
+
+message AccountChoice {
+  string id = 1;
+  // "Laurentian · ali@laurentian.ca"
+  string label = 2;
+  MailProvider provider = 3;
+  bool selected = 4;
+}
+
+message SendLaterChoice {
+  // "Tomorrow 8:00", "Mon 8:00"
+  string label = 1;
+  string day_id = 2;
+  uint32 minute = 3;
+}
+
+// A saved draft in the sidebar, reopened with Intent.open_draft.
+message NavDraft {
+  string draft_id = 1;
+  // "To Mira", "No recipient"
+  string title = 2;
+  // "Re: Slides for Thursday · 9:52", or "Sends Thu 8:00" once scheduled
+  string detail = 3;
+  // What the Backend reports of its send.
+  oneof send {
+    DraftUnsent unsent = 4;
+    DraftHeld held = 5;
+    DraftSending sending = 6;
+    DraftNotSent not_sent = 7;
+  }
+}
+
+// Not handed over; Intent.open_draft opens it.
+message DraftUnsent {}
+
+// The Backend holds it: in the undo window or scheduled. Intent.cancel_send takes it back.
+message DraftHeld {
+  // "Undo", "Cancel"
+  string action = 1;
+}
+
+message DraftSending {}
+
+// The Backend could not send it; the reason is in the detail.
+message DraftNotSent {}

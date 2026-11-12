@@ -18,12 +18,14 @@ message ConnectView {
 }
 
 message ConnectedAccount {
+  reserved 5;
+  reserved "status";
   string id = 1;
   string name = 2;
   MailProvider provider = 3;
   // "Gmail"
   string provider_name = 4;
-  AccountStatus status = 5;
+  AccountState state = 6;
 }
 
 // Choosing a provider from ConnectView.providers (Intent.pick_mail_provider).
@@ -53,7 +55,7 @@ message ConnectSigningIn {
 }
 
 // Address and app password for an IMAP provider. Back (Intent.back) or Connect (Intent.confirm_connect).
-// The typed values stay in the Frontend until the real connect flow, a later roadmap task.
+// The typed values go to the engine with Intent.connect_imap.
 message ConnectImapForm {
   reserved 2;
   MailProvider provider = 1;
@@ -65,6 +67,24 @@ message ConnectImapForm {
   }
   // "Connect iCloud Mail"
   string title = 6;
+  // Connect is Intent.connect_imap with the typed values.
+  oneof check {
+    ImapIdle idle = 7;
+    ImapChecking checking = 8;
+    ImapRejected rejected = 9;
+  }
+}
+
+message ImapIdle {}
+
+message ImapChecking {
+  // "Checking with iCloud Mail"
+  string label = 1;
+}
+
+message ImapRejected {
+  // "Enter the whole address, like ali@icloud.com", "iCloud Mail did not accept that app password"
+  string reason = 1;
 }
 
 // The provider's IMAP server is known; no server fields.

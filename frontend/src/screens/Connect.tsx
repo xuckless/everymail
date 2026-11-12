@@ -1,8 +1,8 @@
 import "./connect.css";
 import { AnimatePresence } from "motion/react";
 import { allInboxes } from "../chrome/places";
-import { unset, useSend } from "../engine";
-import type { MailProvider } from "../gen/ui/v1/common_pb";
+import { match, unset, useSend } from "../engine";
+import { Form, type MailProvider } from "../gen/ui/v1/common_pb";
 import type {
 	ConnectedAccount,
 	ConnectImapForm,
@@ -16,6 +16,7 @@ import { Button } from "../ui/Button";
 import { accountStatus, Dot } from "../ui/Dot";
 import { Field } from "../ui/Field";
 import { Logo, LogoTile } from "../ui/Logo";
+import { OutcomeNote, useOutcome } from "../ui/Outcome";
 import { Overlap } from "../ui/Overlap";
 import { PresentSheet } from "../ui/Overlay";
 import { Row, Rows } from "../ui/Rows";
@@ -54,7 +55,7 @@ function DesktopConnect({ view }: { view: ConnectView }) {
 					</section>
 				)}
 				<Overlap id={step.case ?? unset("ConnectView.step")}>
-					{step.case === "picking" ? (
+					{picking(step) ? (
 						<ProviderGrid providers={view.providers} />
 					) : (
 						<div className="tile connect-step">
@@ -105,7 +106,7 @@ function PhoneConnect({ view }: { view: ConnectView }) {
 				<OpenInbox />
 			</div>
 			<AnimatePresence>
-				{step.case !== "picking" && (
+				{!picking(step) && (
 					<PresentSheet
 						key="step"
 						label="Connect an account"
@@ -134,7 +135,7 @@ function Connected({
 	return (
 		<Rows label="Connected accounts" className="connected">
 			{accounts.map((account, i) => {
-				const { tone, label } = accountStatus(account.status);
+				const { tone, label } = accountStatus(account.state);
 				return (
 					<Row key={account.id} index={i} className="tile connected-row">
 						<LogoTile brand={mail(account.provider)} size={20} box={32} />
@@ -167,7 +168,7 @@ function ProviderGrid({ providers }: { providers: ConnectProvider[] }) {
 					<button
 						key={each.provider}
 						type="button"
-						className="tile press row-in stagger provider-tile"
+						className="tile press row-in provider-tile"
 						style={stagger(i)}
 						onClick={() =>
 							send({
@@ -196,7 +197,7 @@ function ProviderList({ providers }: { providers: ConnectProvider[] }) {
 				<button
 					key={each.provider}
 					type="button"
-					className="menu-row touch press row-in stagger"
+					className="menu-row touch press row-in"
 					style={stagger(i)}
 					onClick={() =>
 						send({
@@ -215,6 +216,15 @@ function ProviderList({ providers }: { providers: ConnectProvider[] }) {
 }
 
 // The steps after picking, shared by the desktop tile and the phone sheet.
+// Picking a provider is the grid or list itself; every other step is shown over it.
+const picking = (step: ConnectView["step"]) =>
+	match(step, "ConnectView.step", {
+		picking: () => true,
+		signingIn: () => false,
+		imapForm: () => false,
+		syncing: () => false,
+	});
+
 function StepBody({ step }: { step: ConnectView["step"] }) {
 	switch (step.case) {
 		case "signingIn":
@@ -256,16 +266,31 @@ function SigningIn({ step }: { step: ConnectSigningIn }) {
 	);
 }
 
+// The typed address, password and (for other IMAP) server go to the engine with Connect; the
+// password is never kept. While the engine checks them the button says so; a rejection shows its
+// reason under the fields.
 function ImapForm({ step }: { step: ConnectImapForm }) {
 	const send = useSend();
 	const [address, setAddress] = useDraft();
 	const [password, setPassword] = useDraft();
+	const [server, setServer] = useDraft();
+	const [port, setPort] = useDraft(
+		match(step.server, "ConnectImapForm.server", {
+			known: () => "",
+			entry: (entry) => entry.defaultPort,
+		}),
+	);
+	const outcome = useOutcome({ case: "form", value: Form.IMAP });
+	const { check } = step;
 	return (
 		<form
 			className="connect-form"
 			onSubmit={(event) => {
 				event.preventDefault();
-				send({ case: "confirmConnect", value: {} });
+				send({
+					case: "connectImap",
+					value: { provider: step.provider, address, password, server, port },
+				});
 			}}
 		>
 			<span className="connect-step-head">
@@ -292,7 +317,30 @@ function ImapForm({ step }: { step: ConnectImapForm }) {
 				onChange={setPassword}
 				hint={step.passwordHint}
 			/>
-			<Server server={step.server} />
+			{match(step.server, "ConnectImapForm.server", {
+				known: () => null,
+				entry: () => (
+					<span className="reveal connect-server">
+						<Field
+							label="IMAP server"
+							placeholder="imap.example.com"
+							value={server}
+							onChange={setServer}
+						/>
+						<Field label="Port" value={port} onChange={setPort} />
+					</span>
+				),
+			})}
+			{match(check, "ConnectImapForm.check", {
+				idle: () => null,
+				checking: () => null,
+				rejected: (rejected) => (
+					<span className="sm bad settle" role="alert">
+						{rejected.reason}
+					</span>
+				),
+			})}
+			<OutcomeNote outcome={outcome} />
 			<span className="connect-actions end">
 				<Button
 					variant="soft"
@@ -300,38 +348,28 @@ function ImapForm({ step }: { step: ConnectImapForm }) {
 				>
 					Back
 				</Button>
-				<Button variant="primary" type="submit">
-					Connect
+				<Button
+					variant="primary"
+					type="submit"
+					disabled={match(check, "ConnectImapForm.check", {
+						idle: () => false,
+						checking: () => true,
+						rejected: () => false,
+					})}
+				>
+					<Overlap
+						id={check.case ?? unset("ConnectImapForm.check")}
+						className="btn-label"
+					>
+						{match(check, "ConnectImapForm.check", {
+							idle: () => "Connect",
+							checking: (checking) => checking.label,
+							rejected: () => "Connect",
+						})}
+					</Overlap>
 				</Button>
 			</span>
 		</form>
-	);
-}
-
-function Server({ server }: { server: ConnectImapForm["server"] }) {
-	switch (server.case) {
-		case "known":
-			return null;
-		case "entry":
-			return <ServerEntry defaultPort={server.value.defaultPort} />;
-		case undefined:
-			return unset("ConnectImapForm.server");
-	}
-}
-
-function ServerEntry({ defaultPort }: { defaultPort: string }) {
-	const [host, setHost] = useDraft();
-	const [port, setPort] = useDraft(defaultPort);
-	return (
-		<span className="reveal connect-server">
-			<Field
-				label="IMAP server"
-				placeholder="imap.example.com"
-				value={host}
-				onChange={setHost}
-			/>
-			<Field label="Port" value={port} onChange={setPort} />
-		</span>
 	);
 }
 
@@ -357,7 +395,7 @@ function Syncing({ step }: { step: ConnectSyncing }) {
 			</div>
 			<div className="connect-stats">
 				{step.stats.map((stat, i) => (
-					<span key={stat.label} className="settle stagger" style={stagger(i)}>
+					<span key={stat.label} className="settle" style={stagger(i)}>
 						<span className="connect-stat">{stat.value}</span>
 						<span className="xs subtle">{stat.label}</span>
 					</span>

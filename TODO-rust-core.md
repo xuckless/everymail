@@ -30,6 +30,14 @@ Tests sit next to the logic they cover and only cover hard, deterministic logic.
 - [ ] Session state as an explicit enum (signed out, signing in, signed in, expired) with one pure transition function and tests
 - [ ] One Backend client attaches the session to every call and turns an expired session into the signed-out transition
 - [ ] `ui.v1` sign-in view and intents: choose Google or Microsoft, open the provider page in the system browser, finish against TODO-backend: `AuthService`
+- [ ] Per-screen queries: each view is built from queries scoped to the current screen and selection, replacing the load of the whole replica on every input (about 52 queries and a full in-memory copy today); measure with a 50k-message replica
+      Fine at sample-data size; required before a real mailbox, for speed and for the RAM limit
+- [ ] The Backend port's requests and updates defined as `api.v1` protobuf messages and generated with prost, replacing the Rust types in `engine/src/backend.rs`
+      Found by the audit: protobuf is the single source of truth for every type shared by the Backend and the engine, and today the port is Rust-only
+- [ ] Time zones: wall times formatted in the user's zone and sent to the Backend as wall time plus an IANA zone; everything is UTC today
+- [ ] Demo Backend removed from the shipped engine once the real Backend serves the port; until then it is the only implementation and lives only in `engine/src/demo/`
+- [ ] Audit leftovers: the demo reads the whole replica through one broad interface; the first sync arrives as the seed's SQL text instead of typed frames; stable ids on briefing lines, news items, dry-run results, result groups, triggers and stats; the remaining unspecified-enum branches in body theming and provider mapping; frozen text in seeded stats
+- [ ] Contract gaps the Frontend still works around: subject words for a rule arrive as one phrase; the custom interval's applicability is read from choice ids; a new rule has no default condition; an empty signature is not normalised to none; run outcomes carry no label
 
 ## First account connected and mail synced read-only
 

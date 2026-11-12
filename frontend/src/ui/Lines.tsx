@@ -30,14 +30,16 @@ export function SwitchLine({
 	label,
 	hint,
 	on,
+	onToggle,
 }: {
 	label: string;
 	hint?: string;
 	on: boolean;
+	onToggle: () => void;
 }) {
 	return (
 		<SettingLine label={label} hint={hint}>
-			<Switch on={on} label={label} />
+			<Switch on={on} label={label} onToggle={onToggle} />
 		</SettingLine>
 	);
 }

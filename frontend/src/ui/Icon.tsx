@@ -25,12 +25,24 @@ export type IconName =
 	| "retry"
 	| "search"
 	| "summary"
-	| "more"
 	| "lock"
 	| "snooze"
 	| "link-off"
 	| "arrow-right"
-	| "forward";
+	| "forward"
+	| "reply"
+	| "reply-all"
+	| "trash"
+	| "folder"
+	| "unread"
+	| "sidebar"
+	| "approvals"
+	| "file"
+	| "file-text"
+	| "file-zip"
+	| "image"
+	| "table"
+	| "presentation";
 
 // Decorative; the control around it carries the label.
 export function Icon({

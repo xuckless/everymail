@@ -1,82 +1,21 @@
 import { modelSettings } from "../../chrome/places";
-import { unset, useSend } from "../../engine";
-import {
-	type AgentChat,
-	type AgentDetail,
-	AgentDetailPane,
-	AgentsPane,
-	type AgentsView,
-	type ChatReference,
-	type ChatTurn,
-} from "../../gen/ui/v1/agents_pb";
-import { useLayout } from "../../presentation";
+import { match, unset, useSend } from "../../engine";
+import type { AgentChat, ChatTurn } from "../../gen/ui/v1/agents_pb";
 import { Button } from "../../ui/Button";
-import { Composer } from "../../ui/Composer";
+import { Confirm } from "../../ui/Confirm";
 import { Dot } from "../../ui/Dot";
+import { MessageBox } from "../../ui/MessageBox";
 import { Paragraphs } from "../../ui/Paragraphs";
+import { References } from "../../ui/Reference";
 import { Row, Rows } from "../../ui/Rows";
-import { Segmented } from "../../ui/Segmented";
-import { approvalElement } from "./Queue";
 
-// Writing to an agent: the turns, oldest first, and the composer the engine's availability allows.
-// Sending has no intent yet, so Send is drawn without one.
-
-// The selected agent's chat, when it has one.
-export function chatOf(detail: AgentsView["detail"]): AgentChat | undefined {
-	switch (detail.case) {
-		case "agent":
-			return agentChat(detail.value.chat);
-		case "none":
-			return undefined;
-		case undefined:
-			return unset("AgentsView.detail");
-	}
-}
-
-export function agentChat(chat: AgentDetail["chat"]): AgentChat | undefined {
-	switch (chat.case) {
-		case "available":
-			return chat.value;
-		case "none":
-			return undefined;
-		case undefined:
-			return unset("AgentDetail.chat");
-	}
-}
-
-export function currentDetailPane(chat: AgentChat) {
-	return (
-		chat.panes.find((tab) => tab.current)?.pane ?? unset("AgentChat.panes")
-	);
-}
-
-// The phone shows the chat over the whole screen while it is the current pane.
-export function chatCoversPhone(view: AgentsView) {
-	const chat = chatOf(view.detail);
-	return chat !== undefined && currentDetailPane(chat) === AgentDetailPane.CHAT;
-}
-
-export function DetailPanes({ chat }: { chat: AgentChat }) {
-	const send = useSend();
-	return (
-		<Segmented
-			kind="tabs"
-			label="Agent"
-			className="detail-panes"
-			segments={chat.panes.map((tab) => ({
-				key: String(tab.pane),
-				label: tab.label,
-				selected: tab.current,
-				onSelect: () =>
-					send({ case: "selectAgentDetailPane", value: { pane: tab.pane } }),
-			}))}
-		/>
-	);
-}
+// Writing to an agent: the turns, oldest first, and the message box the engine's availability
+// allows. Send and ⌘Enter send the message; the box clears when the engine says it took it.
 
 // The conversation over the composer. The scroll area is column-reverse, so it starts at the newest
 // turn and stays there as turns arrive, without the Frontend holding a scroll position.
-export function Chat({ chat }: { chat: AgentChat }) {
+export function Chat({ chat, agentId }: { chat: AgentChat; agentId: string }) {
+	const send = useSend();
 	return (
 		<div className="chat">
 			<div className="scroll chat-scroll">
@@ -85,7 +24,29 @@ export function Chat({ chat }: { chat: AgentChat }) {
 				</div>
 			</div>
 			<div className="chat-foot">
-				<Availability availability={chat.availability} />
+				{match(chat.conversation, "AgentChat.conversation", {
+					empty: () => null,
+					turns: () => (
+						<Confirm
+							question="Clear this conversation?"
+							action="Clear"
+							side="above"
+							onConfirm={() =>
+								send({ case: "clearConversation", value: { agentId } })
+							}
+							trigger={(props) => (
+								<button type="button" {...props} className="link xs">
+									Clear conversation
+								</button>
+							)}
+						/>
+					),
+				})}
+				<Availability
+					availability={chat.availability}
+					agentId={agentId}
+					revision={chat.revision}
+				/>
 			</div>
 		</div>
 	);
@@ -142,23 +103,17 @@ function TurnState({ state }: { state: ChatTurn["state"] }) {
 				<span className="sm status-line settle">
 					<Dot tone="wait" />
 					<span className="muted">{state.value.label}</span>
-					<ApprovalLink
-						approvalId={state.value.approvalId}
-						title={state.value.approvalTitle}
-					/>
+					<ApprovalLink title={state.value.approvalTitle} />
 				</span>
 			);
 		case "answered":
 			return (
 				<div className="chat-answer">
 					<Paragraphs texts={state.value.paragraphs} settle />
-					{state.value.references.length > 0 && (
-						<span className="chat-references settle">
-							{state.value.references.map((reference) => (
-								<Reference key={reference.label} reference={reference} />
-							))}
-						</span>
-					)}
+					<References
+						references={state.value.references}
+						className="sm settle"
+					/>
 				</div>
 			);
 		case "failed":
@@ -180,82 +135,43 @@ function TurnState({ state }: { state: ChatTurn["state"] }) {
 	}
 }
 
-// Narrow layouts show the queue as a pane: the link selects it. Wide layouts show the queue beside
-// the chat: the link brings the approval into view there and focuses it.
-function ApprovalLink({
-	approvalId,
-	title,
-}: {
-	approvalId: string;
-	title: string;
-}) {
+// The approval the turn waits for is on the Approvals screen.
+function ApprovalLink({ title }: { title: string }) {
 	const send = useSend();
-	const wide = useLayout() === "split";
 	return (
 		<button
 			type="button"
 			className="link"
-			onClick={() => {
-				if (!wide)
-					return send({
-						case: "selectAgentsPane",
-						value: { pane: AgentsPane.APPROVALS },
-					});
-				const item = document.getElementById(approvalElement(approvalId));
-				item?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-				item?.focus({ preventScroll: true });
-			}}
+			onClick={() => send({ case: "openApprovals", value: {} })}
 		>
 			{title}
 		</button>
 	);
 }
 
-function Reference({ reference }: { reference: ChatReference }) {
-	const send = useSend();
-	const { target } = reference;
-	return (
-		<button
-			type="button"
-			className="link sm chat-reference"
-			onClick={() => {
-				switch (target.case) {
-					case "thread":
-						return send({
-							case: "openThread",
-							value: { threadId: target.value.threadId },
-						});
-					case "event":
-						return send({
-							case: "selectEvent",
-							value: { eventId: target.value.eventId },
-						});
-					case undefined:
-						return unset("ChatReference.target");
-				}
-			}}
-		>
-			{reference.label}
-		</button>
-	);
-}
-
 function Availability({
 	availability,
+	agentId,
+	revision,
 }: {
 	availability: AgentChat["availability"];
+	agentId: string;
+	// AgentChat.revision: the box starts empty when the engine took a message.
+	revision: number;
 }) {
 	const send = useSend();
 	switch (availability.case) {
 		case "ready":
 			return (
-				<Composer
+				<MessageBox
+					key={revision}
 					label={availability.value.placeholder}
 					placeholder={availability.value.placeholder}
-				>
-					<span className="grow" />
-					<Button variant="primary">Send</Button>
-				</Composer>
+					action="Send"
+					onSubmit={(text) =>
+						send({ case: "sendChatMessage", value: { agentId, text } })
+					}
+				/>
 			);
 		case "busy":
 			return (

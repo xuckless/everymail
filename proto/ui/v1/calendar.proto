@@ -4,15 +4,20 @@ package ui.v1;
 
 import "ui/v1/common.proto";
 
-// A week of events from every calendar in one view.
+// Every calendar in one view: a week, a month or a year around the selected day. The path is
+// "/u/0/calendar/<week|month|year>/<selected day>", such as "/u/0/calendar/week/2026-11-11".
+// Previous, next and today are Intent.show_previous_period, show_next_period and show_today.
 message CalendarView {
-  // "November 2026"
-  string month = 1;
-  // "Nov 9 – 15"
-  string range = 2;
-  // The hours the grid shows, top to bottom.
-  repeated HourMark hours = 3;
-  repeated CalendarDay days = 4;
+  reserved 1, 2, 3, 4;
+  // "November 2026", "2026"
+  string title = 10;
+  // Week, Month, Year; one current (Intent.select_calendar_view).
+  repeated CalendarModeTab modes = 11;
+  oneof period {
+    WeekPeriod week = 12;
+    MonthPeriod month = 13;
+    YearPeriod year = 14;
+  }
   repeated CalendarSource calendars = 5;
   // Invitations waiting for or holding an answer.
   repeated Invitation invitations = 6;
@@ -20,8 +25,107 @@ message CalendarView {
   oneof selected {
     NoEventSelected none = 7;
     EventDetail event = 8;
-    Invitation invitation = 9;
+    SelectedInvitation invitation = 15;
+    // A new event not saved yet (Intent.new_event); its id is empty.
+    EventDetail unsaved = 16;
   }
+  reserved 9;
+}
+
+message SelectedInvitation {
+  Invitation invitation = 1;
+  // The day it is on: "2026-11-12"
+  string day_id = 2;
+}
+
+enum CalendarMode {
+  CALENDAR_MODE_UNSPECIFIED = 0;
+  CALENDAR_MODE_WEEK = 1;
+  CALENDAR_MODE_MONTH = 2;
+  CALENDAR_MODE_YEAR = 3;
+}
+
+message CalendarModeTab {
+  CalendarMode mode = 1;
+  // "Week"
+  string label = 2;
+  bool current = 3;
+}
+
+// Monday to Sunday. The phone shows the selected day's agenda.
+message WeekPeriod {
+  // "Nov 9 – 15", "Nov 30 – Dec 6"
+  string range = 1;
+  // The hours the grid shows, top to bottom.
+  repeated HourMark hours = 2;
+  repeated CalendarDay days = 3;
+}
+
+// The weeks that hold the month, Monday first. Selecting a day (Intent.select_day) opens its week.
+message MonthPeriod {
+  // "Mon" to "Sun"
+  repeated string weekdays = 1;
+  repeated MonthWeek weeks = 2;
+}
+
+message MonthWeek {
+  repeated MonthDay days = 1;
+}
+
+message MonthDay {
+  // The date: "2026-11-11"
+  string id = 1;
+  // "11"
+  string day = 2;
+  // False for the days before and after the month that fill its first and last week.
+  bool in_month = 3;
+  bool today = 4;
+  bool selected = 5;
+  // At most three; when more events fall on the day, two and `more`.
+  repeated EventChip chips = 6;
+  // "+2 more"; empty when every event has a chip.
+  string more = 7;
+}
+
+message EventChip {
+  string id = 1;
+  string title = 2;
+  CalendarColor color = 3;
+  // "10:00"
+  string start = 4;
+}
+
+// Twelve months. Selecting a month (Intent.select_month) opens it.
+message YearPeriod {
+  // "M" to "S"
+  repeated string weekdays = 1;
+  repeated YearMonth months = 2;
+}
+
+message YearMonth {
+  // "2026-11"
+  string id = 1;
+  // "November"
+  string name = 2;
+  // It holds the selected day.
+  bool current = 3;
+  repeated YearWeek weeks = 4;
+}
+
+message YearWeek {
+  repeated YearDay days = 1;
+}
+
+message YearDay {
+  // "2026-11-11"
+  string id = 1;
+  // "11"
+  string day = 2;
+  // False for the days of the neighbouring months that fill a week; the Frontend leaves them blank.
+  bool in_month = 3;
+  bool today = 4;
+  // Some event falls on it.
+  bool busy = 5;
 }
 
 message HourMark {
@@ -47,7 +151,8 @@ message CalendarDay {
   }
   // The date: "2026-11-11"
   string id = 5;
-  // The day a narrow layout shows (Intent.select_day); today until the user picks another.
+  // The selected day (Intent.select_day), the one a narrow layout shows; today until the user picks
+  // another.
   bool selected = 6;
 }
 
@@ -108,11 +213,12 @@ message NoEventSelected {}
 // The event drawer, with the event's current values.
 message EventDetail {
   reserved 6, 8;
+  // Empty for the unsaved event.
   string id = 1;
-  // The drawer's title: "Edit event"
+  // The drawer's title: "Edit event", "New event"
   string heading = 9;
   string title = 2;
-  // The day choices: "Mon, Nov 9".
+  // The days of the event's week: "Mon, Nov 9".
   repeated Choice days = 3;
   // "10:00"
   string starts = 4;
@@ -122,6 +228,14 @@ message EventDetail {
   string saved_to = 7;
   // "Mira"
   repeated string guests = 10;
+  // The values Intent.save_event takes.
+  string day_id = 12;
+  uint32 start_minute = 13;
+  uint32 end_minute = 14;
+  // Every half hour, for the start and end menus.
+  repeated TimeChoice times = 15;
+  // "FA-224", or empty; Intent.save_event takes it back.
+  string place = 16;
 }
 
 // One calendar the event can be saved to.

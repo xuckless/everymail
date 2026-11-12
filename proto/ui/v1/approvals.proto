@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package ui.v1;
+
+import "ui/v1/common.proto";
+
+// What agents left waiting for the user, at "/u/0/approvals" (Intent.open_approvals).
+//
+// Desktop: the sidebar entry under Briefing. Phone: the first row of the Agents tab's list, and
+// the link of a chat turn waiting for approval; back (Intent.back) returns to the agents list.
+message ApprovalsView {
+  oneof queue {
+    ApprovalQueue waiting = 1;
+    QueueClear clear = 2;
+  }
+}
+
+// The sidebar entry and the phone's row on the agents list.
+message NavApprovals {
+  // "Approvals"
+  string label = 1;
+  // The waiting count: "5"; empty when nothing waits.
+  string waiting = 2;
+  bool current = 3;
+}
+
+message ApprovalQueue {
+  // "5 items"
+  string count = 1;
+  repeated ApprovalItem items = 2;
+}
+
+// Nothing waits: all clear.
+message QueueClear {
+  // "All clear. Nothing waits for you"
+  string text = 1;
+}
+
+message ApprovalItem {
+  string id = 1;
+  // The agent's name.
+  string agent = 2;
+  string time = 3;
+  string title = 4;
+  string detail = 5;
+  // Why it asks: "Gmail accounts always ask before sending for now"
+  string reason = 6;
+  oneof action {
+    SendApproval send = 7;
+    UnsubscribeApproval unsubscribe = 8;
+  }
+  ApprovalState state = 9;
+}
+
+// Approve and send (Intent.approve_item), Edit (Intent.edit_approval, which opens the drafted reply
+// in the composer), Decline (Intent.decline_item).
+message SendApproval {
+  string thread_id = 1;
+}
+
+// Unsubscribe (Intent.approve_item) or Keep (Intent.decline_item).
+message UnsubscribeApproval {}

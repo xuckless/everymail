@@ -1,9 +1,9 @@
 import "./thread.css";
+import { anyOf, modelProviders } from "@everymail/design/brands";
 import { modelSettings } from "../chrome/places";
-import { unset, useSend } from "../engine";
+import { match, unset, useSend } from "../engine";
 import type {
 	ComposeReady,
-	ModelChoice,
 	ReplyPanel,
 	ThreadMessage,
 	ThreadView,
@@ -11,23 +11,26 @@ import type {
 import { useLayout, useOverlay } from "../presentation";
 import { AgentDraft } from "../ui/AgentDraft";
 import { Button, IconButton } from "../ui/Button";
-import { Check } from "../ui/Check";
-import { Composer } from "../ui/Composer";
+import { cx } from "../ui/cx";
 import { Icon } from "../ui/Icon";
-import { Invitation } from "../ui/Invitation";
-import { Logo } from "../ui/Logo";
+import { ModelChip } from "../ui/Logo";
+import { MailToolbar, MessageCard } from "../ui/MailCard";
 import { MessageBody } from "../ui/MessageBody";
+import { MessageBox } from "../ui/MessageBox";
+import { choiceRows, ModelMenu } from "../ui/ModelMenu";
 import { Overlap } from "../ui/Overlap";
-import { Popover, UserSheet } from "../ui/Overlay";
+import { UserSheet } from "../ui/Overlay";
 import { Paragraphs } from "../ui/Paragraphs";
+import { PhoneHead } from "../ui/PhoneHead";
+import { Row, Rows } from "../ui/Rows";
 import { Segmented } from "../ui/Segmented";
 import { Summary } from "../ui/Summary";
 import { stagger } from "../ui/stagger";
 import type { ScreenProps } from "./Screen";
 
-// One thread with Reply with AI beside it (desktop) or in a sheet (phone). Back returns to the
-// inbox. Archive, more, forward, quick replies, tone, the model choice, Write, Attach and Send have
-// no intent yet and are drawn without one; the reply instruction stays in the field.
+// One thread with Reply with AI beside it (desktop) or in a sheet (phone): the toolbar, the subject,
+// Scribe's summary and a card per message. Back returns to the inbox. The toolbar carries the
+// thread's actions and the latest message's star (ThreadView.message_id).
 export function Thread({ view }: ScreenProps<ThreadView>) {
 	const layout = useLayout();
 	switch (layout) {
@@ -39,7 +42,7 @@ export function Thread({ view }: ScreenProps<ThreadView>) {
 			return (
 				<>
 					<ThreadPanel view={view} />
-					<ReplyAside reply={view.reply} />
+					<ReplyAside reply={view.reply} threadId={view.threadId} />
 				</>
 			);
 	}
@@ -51,16 +54,19 @@ function ThreadPanel({ view }: { view: ThreadView }) {
 	const send = useSend();
 	return (
 		<section className="panel thread-main" aria-label={view.subject}>
-			<div className="thread-bar">
-				<IconButton
-					icon="chevron-left"
-					label="Back to inbox"
-					onClick={() => send(back)}
-				/>
-				<span className="sm subtle grow trunc">{view.context}</span>
-				<IconButton icon="archive" label="Archive" />
-				<IconButton icon="more" label="More" />
-			</div>
+			<MailToolbar
+				threadId={view.threadId}
+				actions={view.actions}
+				place={view.place}
+				star={{ messageId: view.messageId, starred: view.starred }}
+				lead={
+					<IconButton
+						icon="chevron-left"
+						label="Back to inbox"
+						onClick={() => send(back)}
+					/>
+				}
+			/>
 			<div className="scroll thread-scroll">
 				<ThreadContent view={view} />
 			</div>
@@ -71,80 +77,93 @@ function ThreadPanel({ view }: { view: ThreadView }) {
 function ThreadContent({ view }: { view: ThreadView }) {
 	return (
 		<div className="thread-body">
-			<h1 className="h1 thread-subject">{view.subject}</h1>
-			<Summary summary={view.summary} label="Thread summary by Scribe" />
+			<header className="thread-head">
+				<h1 className="h1 thread-subject">{view.subject}</h1>
+				<span className="sm subtle">{view.context}</span>
+			</header>
+			<Summary summary={view.scribe} label="Thread summary by Scribe" />
 			{view.messages.map((message) => (
 				<Message key={message.messageId} message={message} />
 			))}
-			{view.drafts.map((draft) => (
-				<AgentDraft key={draft.approvalId} draft={draft} />
-			))}
+			<Rows label="Agent drafts">
+				{view.drafts.map((draft, i) => (
+					<Row key={draft.approvalId} index={i}>
+						<AgentDraft draft={draft} />
+					</Row>
+				))}
+			</Rows>
 		</div>
 	);
 }
 
+// A message's card; its head expands and collapses it.
 function Message({ message }: { message: ThreadMessage }) {
 	const send = useSend();
-	const { display } = message;
-	const messageId = message.messageId;
+	const { display, messageId } = message;
+	const shown = match(display, "ThreadMessage.display", {
+		collapsed: () => ({
+			expanded: false,
+			invitations: [],
+			body: null,
+			toggle: { case: "expandMessage", value: { messageId } } as const,
+		}),
+		expanded: (expanded) => ({
+			expanded: true,
+			invitations: expanded.invitations,
+			body: <MessageBody url={expanded.bodyUrl} title={message.subject} />,
+			toggle: { case: "collapseMessage", value: { messageId } } as const,
+		}),
+	});
 	return (
-		<div className="message">
-			<button
-				type="button"
-				className="press message-head"
-				aria-expanded={display.case === "expanded"}
-				onClick={() =>
-					send(
-						display.case === "expanded"
-							? { case: "collapseMessage", value: { messageId } }
-							: { case: "expandMessage", value: { messageId } },
-					)
-				}
-			>
-				<span className="grow two-line message-who">
-					<span className="sender">{message.from}</span>
-					<span className="xs subtle trunc">{message.preview}</span>
-				</span>
-				<span className="xs subtle">{message.time}</span>
-			</button>
-			<MessageDisplay display={display} title={message.preview} />
-		</div>
+		<MessageCard
+			messageId={messageId}
+			from={message.from}
+			recipients={message.recipients}
+			time={message.time}
+			subject={message.subject}
+			starred={message.starred}
+			attachments={message.attachments}
+			invitations={shown.invitations}
+			open={{
+				expanded: shown.expanded,
+				preview: message.preview,
+				toggle: () => send(shown.toggle),
+			}}
+		>
+			{shown.body}
+		</MessageCard>
 	);
 }
 
-function MessageDisplay({
-	display,
-	title,
+function ReplyAside({
+	reply,
+	threadId,
 }: {
-	display: ThreadMessage["display"];
-	title: string;
+	reply: ReplyPanel | undefined;
+	threadId: string;
 }) {
-	switch (display.case) {
-		case "collapsed":
-			return null;
-		case "expanded":
-			return (
-				<div className="message-open reveal">
-					<MessageBody url={display.value.bodyUrl} title={title} />
-					{display.value.invitations.map((invitation) => (
-						<Invitation
-							key={invitation.eventId}
-							invitation={invitation}
-							form="thread"
-						/>
-					))}
-				</div>
-			);
-		case undefined:
-			return unset("ThreadMessage.display");
-	}
-}
-
-function ReplyAside({ reply }: { reply: ReplyPanel | undefined }) {
 	return (
 		<aside className="panel thread-reply" aria-label="Reply with AI">
-			<ReplyState reply={reply} form="aside" />
+			<ReplyState reply={reply} form="aside" threadId={threadId} />
 		</aside>
+	);
+}
+
+// The panel's head: its title and, once AI can write, the model menu.
+function ReplyHead({
+	title,
+	form,
+	ready,
+}: {
+	title: string;
+	form: "aside" | "sheet";
+	ready?: ComposeReady;
+}) {
+	return (
+		<div className={cx("reply-head", form === "sheet" && "reply-head-sheet")}>
+			<span className="h2 grow trunc reply-title">{title}</span>
+			{ready && <ReplyModelMenu ready={ready} />}
+		</div>
 	);
 }
 
@@ -152,34 +171,29 @@ function ReplyAside({ reply }: { reply: ReplyPanel | undefined }) {
 function ReplyState({
 	reply,
 	form,
+	threadId,
 }: {
 	reply: ReplyPanel | undefined;
 	form: "aside" | "sheet";
+	threadId: string;
 }) {
 	const state = reply?.state;
 	switch (state?.case) {
 		case "off":
 			return (
 				<>
-					{form === "aside" && (
-						<div className="reply-head">
-							<span className="h2 grow reply-title">Reply</span>
-						</div>
-					)}
+					{form === "aside" && <ReplyHead title="Reply" form="aside" />}
 					<ComposeOff />
 				</>
 			);
 		case "ready":
 			return form === "aside" ? (
 				<>
-					<div className="reply-head">
-						<span className="h2 grow reply-title">Reply</span>
-						<ModelMenu ready={state.value} />
-					</div>
-					<ReadyAside ready={state.value} />
+					<ReplyHead title="Reply" form="aside" ready={state.value} />
+					<ReadyAside ready={state.value} threadId={threadId} />
 				</>
 			) : (
-				<PhoneReady ready={state.value} />
+				<PhoneReady ready={state.value} threadId={threadId} />
 			);
 		case undefined:
 			return unset("ReplyPanel.state");
@@ -192,8 +206,8 @@ function ComposeOff() {
 		<div className="compose-off settle">
 			<span className="strong">AI compose is off</span>
 			<span className="sm muted">
-				Add your own Anthropic, OpenAI, Gemini or OpenRouter key to write
-				replies with AI. Your system agents keep running their built-in checks
+				Add your own {anyOf(modelProviders)} key to write replies with AI. Your
+				system agents keep running their built-in checks
 			</span>
 			<Button variant="soft" onClick={() => send(modelSettings)}>
 				Add a key
@@ -202,106 +216,40 @@ function ComposeOff() {
 	);
 }
 
-function ModelMenu({ ready }: { ready: ComposeReady }) {
+function ReplyModelMenu({ ready }: { ready: ComposeReady }) {
+	const send = useSend();
 	return (
-		<Popover
+		<ModelMenu
 			label="Model"
 			align="end"
 			className="model-menu"
+			rows={choiceRows(ready.models)}
+			onPick={(modelName) =>
+				send({ case: "selectComposeModel", value: { modelName } })
+			}
 			trigger={(trigger) => (
 				<button type="button" className="chip press model-chip" {...trigger}>
-					<ModelLogo model={ready.model} />
-					{ready.model?.name}
+					<ModelChip model={ready.model} />
 					<Icon name="chevron-down" size="sm" className="subtle" />
 				</button>
 			)}
-		>
-			{(dismiss) =>
-				ready.models.map((choice, i) => (
-					<ModelOption
-						key={choice.model?.name}
-						choice={choice}
-						index={i}
-						dismiss={dismiss}
-					/>
-				))
-			}
-		</Popover>
+		/>
 	);
 }
 
-function ModelLogo({ model }: { model: ComposeReady["model"] }) {
-	if (!model) return unset("ComposeReady.model");
-	return <Logo brand={{ kind: "model", provider: model.provider }} />;
-}
-
-function ModelOption({
-	choice,
-	index,
-	dismiss,
+function ReadyAside({
+	ready,
+	threadId,
 }: {
-	choice: ModelChoice;
-	index: number;
-	dismiss: () => void;
+	ready: ComposeReady;
+	threadId: string;
 }) {
-	const send = useSend();
-	const model = choice.model ?? unset("ModelChoice.model");
-	switch (choice.availability.case) {
-		case "ready":
-			return (
-				<button
-					type="button"
-					role="menuitemradio"
-					aria-checked={choice.selected}
-					className="menu-row row-in stagger"
-					style={stagger(index)}
-				>
-					<ModelLogo model={model} />
-					<span className="grow">{model.name}</span>
-					<span className="xs subtle">
-						{choice.availability.value.providerName}
-					</span>
-					<Check on={choice.selected} />
-				</button>
-			);
-		case "needsKey":
-			return (
-				<button
-					type="button"
-					role="menuitem"
-					className="menu-row row-in stagger subtle"
-					style={stagger(index)}
-					onClick={() => {
-						dismiss();
-						send(modelSettings);
-					}}
-				>
-					<ModelLogo model={model} />
-					<span className="grow">{model.name}</span>
-					<span className="xs">{choice.availability.value.label}</span>
-				</button>
-			);
-		case undefined:
-			return unset("ModelChoice.availability");
-	}
-}
-
-function ReadyAside({ ready }: { ready: ComposeReady }) {
 	return (
 		<>
 			<div className="scroll reply-scroll">
 				<div className="reply-group">
 					<span className="label">Quick replies</span>
-					{ready.quickReplies.map((text, i) => (
-						<button
-							key={text}
-							type="button"
-							className="menu-row press row-in stagger quick-reply"
-							style={stagger(i)}
-						>
-							{text}
-						</button>
-					))}
+					<QuickReplies ready={ready} threadId={threadId} />
 				</div>
 				<div className="reply-group">
 					<span className="label">Tone</span>
@@ -311,25 +259,60 @@ function ReadyAside({ ready }: { ready: ComposeReady }) {
 					id={ready.generation.case ?? unset("ComposeReady.generation")}
 					className="reply-generation"
 				>
-					<Generation ready={ready} />
+					<Generation ready={ready} threadId={threadId} />
 				</Overlap>
 			</div>
 			<div className="reply-compose">
-				<Composer
-					label="What should the reply say"
-					placeholder="What should it say?"
-				>
-					<IconButton icon="plus" label="Attach" />
-					<span className="grow" />
-					<Button variant="ghost">Write</Button>
-					<Button variant="primary">Send</Button>
-				</Composer>
+				<Instruction key={ready.revision} threadId={threadId} />
 			</div>
 		</>
 	);
 }
 
+// A quick reply is written with its text as the instruction.
+function QuickReplies({
+	ready,
+	threadId,
+	touch,
+}: {
+	ready: ComposeReady;
+	threadId: string;
+	touch?: boolean;
+}) {
+	const send = useSend();
+	return ready.quickReplies.map((text, i) => (
+		<button
+			key={text}
+			type="button"
+			className={cx("menu-row press row-in quick-reply", touch && "touch")}
+			style={stagger(i)}
+			onClick={() =>
+				send({ case: "writeReply", value: { threadId, instruction: text } })
+			}
+		>
+			{text}
+		</button>
+	));
+}
+
+// What the reply should say: Write (or ⌘Enter) writes it. The engine empties the box by a new
+// revision once it took the instruction (ComposeReady.revision).
+function Instruction({ threadId }: { threadId: string }) {
+	const send = useSend();
+	return (
+		<MessageBox
+			label="What should the reply say"
+			placeholder="What should it say?"
+			action="Write"
+			onSubmit={(instruction) =>
+				send({ case: "writeReply", value: { threadId, instruction } })
+			}
+		/>
+	);
+}
+
 function Tones({ ready, touch }: { ready: ComposeReady; touch?: boolean }) {
+	const send = useSend();
 	return (
 		<Segmented
 			kind="radio"
@@ -339,13 +322,30 @@ function Tones({ ready, touch }: { ready: ComposeReady; touch?: boolean }) {
 				key: tone.label,
 				label: tone.label,
 				selected: tone.selected,
+				onSelect: () =>
+					send({ case: "selectTone", value: { tone: tone.label } }),
 			}))}
 		/>
 	);
 }
 
-function Generation({ ready }: { ready: ComposeReady }) {
+function Generation({
+	ready,
+	threadId,
+}: {
+	ready: ComposeReady;
+	threadId: string;
+}) {
+	const send = useSend();
 	const { generation } = ready;
+	const clear = (label: string) => (
+		<Button
+			variant="ghost"
+			onClick={() => send({ case: "clearReply", value: { threadId } })}
+		>
+			{label}
+		</Button>
+	);
 	switch (generation.case) {
 		case "empty":
 			return (
@@ -355,8 +355,18 @@ function Generation({ ready }: { ready: ComposeReady }) {
 			);
 		case "writing":
 			return (
-				<div className="tile generation">
-					<span className="shimmer sm">{generation.value.label}</span>
+				<div className="tile generation generation-line">
+					<span className="shimmer sm grow">{generation.value.label}</span>
+					{clear("Stop")}
+				</div>
+			);
+		case "failed":
+			return (
+				<div className="tile generation generation-line">
+					<span className="sm bad grow settle" role="alert">
+						{generation.value.reason}
+					</span>
+					{clear("Clear")}
 				</div>
 			);
 		case "draft":
@@ -364,6 +374,23 @@ function Generation({ ready }: { ready: ComposeReady }) {
 				<div className="tile generation">
 					<span className="xs subtle">{generation.value.addressing}</span>
 					<Paragraphs texts={generation.value.paragraphs} settle />
+					<span className="settle">
+						<Button
+							variant="primary"
+							onClick={() => send({ case: "sendReply", value: { threadId } })}
+						>
+							<Icon name="send" />
+							Send
+						</Button>
+						<Button
+							variant="soft"
+							onClick={() => send({ case: "useReply", value: { threadId } })}
+						>
+							Edit in composer
+						</Button>
+						<span className="grow" />
+						{clear("Clear")}
+					</span>
 				</div>
 			);
 		case undefined:
@@ -376,18 +403,25 @@ function PhoneThread({ view }: { view: ThreadView }) {
 	const sheet = useOverlay();
 	return (
 		<div className="thread-phone">
-			<header className="thread-phone-bar">
-				<IconButton
-					icon="chevron-left"
-					label="Back"
-					size="lg"
-					touch
-					onClick={() => send(back)}
-				/>
-				<span className="grow" />
-				<IconButton icon="archive" label="Archive" size="lg" touch />
-				<IconButton icon="more" label="More" size="lg" touch />
-			</header>
+			<PhoneHead
+				bar={
+					<MailToolbar
+						threadId={view.threadId}
+						actions={view.actions}
+						place={view.place}
+						star={{ messageId: view.messageId, starred: view.starred }}
+						lead={
+							<IconButton
+								icon="chevron-left"
+								label="Back"
+								size="lg"
+								touch
+								onClick={() => send(back)}
+							/>
+						}
+					/>
+				}
+			/>
 			<div className="scroll noscroll thread-phone-scroll">
 				<ThreadContent view={view} />
 			</div>
@@ -402,54 +436,39 @@ function PhoneThread({ view }: { view: ThreadView }) {
 					<Icon name="compose" className="accent" />
 					Reply with AI
 				</Button>
-				<IconButton
-					icon="forward"
-					label="Forward"
-					size="lg"
-					touch
-					className="raised"
-				/>
 			</div>
 			<UserSheet overlay={sheet} label="Reply with AI">
-				<ReplyState reply={view.reply} form="sheet" />
+				<ReplyState reply={view.reply} form="sheet" threadId={view.threadId} />
 			</UserSheet>
 		</div>
 	);
 }
 
-function PhoneReady({ ready }: { ready: ComposeReady }) {
+function PhoneReady({
+	ready,
+	threadId,
+}: {
+	ready: ComposeReady;
+	threadId: string;
+}) {
 	const { generation } = ready;
 	return (
 		<div className="phone-reply">
-			<div className="reply-head-phone">
-				<span className="h2 grow trunc">{ready.title}</span>
-				<span className="chip model-chip">
-					<ModelLogo model={ready.model} />
-					{ready.model?.name}
-				</span>
-			</div>
+			<ReplyHead title={ready.title} form="sheet" ready={ready} />
 			<Overlap id={generation.case ?? unset("ComposeReady.generation")}>
-				{generation.case === "empty" ? (
-					<div className="reply-group">
-						{ready.quickReplies.map((text, i) => (
-							<button
-								key={text}
-								type="button"
-								className="menu-row touch press row-in stagger quick-reply"
-								style={stagger(i)}
-							>
-								{text}
-							</button>
-						))}
-					</div>
-				) : (
-					<Generation ready={ready} />
-				)}
+				{match(generation, "ComposeReady.generation", {
+					empty: () => (
+						<div className="reply-group">
+							<QuickReplies ready={ready} threadId={threadId} touch />
+						</div>
+					),
+					writing: () => <Generation ready={ready} threadId={threadId} />,
+					failed: () => <Generation ready={ready} threadId={threadId} />,
+					draft: () => <Generation ready={ready} threadId={threadId} />,
+				})}
 			</Overlap>
 			<Tones ready={ready} touch />
-			<Button variant="primary" size="lg">
-				Send
-			</Button>
+			<Instruction key={ready.revision} threadId={threadId} />
 		</div>
 	);
 }

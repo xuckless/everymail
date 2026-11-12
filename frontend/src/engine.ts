@@ -7,8 +7,7 @@
 import { create, type MessageInitShape, toBinary } from "@bufbuild/protobuf";
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { createContext, useContext } from "react";
-import { IntentSchema } from "./gen/ui/v1/shell_pb";
-import { addressBar } from "./presentation";
+import { HistoryStep, IntentSchema } from "./gen/ui/v1/shell_pb";
 
 export type IntentKind = NonNullable<
 	MessageInitShape<typeof IntentSchema>["kind"]
@@ -16,8 +15,10 @@ export type IntentKind = NonNullable<
 
 export type Engine = {
 	send(intent: IntentKind): void;
-	// Called with the path of each rendered view. Web: the address bar follows. Tauri: nothing.
-	showPath(path: string): void;
+	// Called with the path and history step of every rendered view. Web: the address bar follows,
+	// pushing or replacing as the engine says, also when a popped path was rewritten to the one the
+	// view already had. Tauri: nothing.
+	showPath(path: string, step: HistoryStep): void;
 	// The iframe sandbox attribute of a message body. Tauri: "allow-scripts". Web: none, because
 	// Chromium does not route a sandboxed iframe's navigation through the Service Worker; the
 	// Service Worker's response carries `Content-Security-Policy: sandbox allow-scripts` instead,
@@ -50,6 +51,10 @@ function connectWeb(onView: (bytes: Uint8Array) => void): Engine {
 	// The Service Worker asks for a body with its request (`m-slides-4?theme=dark`) and a port; the engine Worker answers
 	// on that port with the bytes.
 	navigator.serviceWorker.onmessage = (message) => {
+		// Only this app's body Service Worker may ask; a page it does not control yet still answers.
+		const { source } = message;
+		if (!(source instanceof ServiceWorker)) return;
+		if (new URL(source.scriptURL).pathname !== bodyWorker) return;
 		const [port] = message.ports;
 		if (typeof message.data === "string" && port)
 			worker.postMessage(message.data, [port]);
@@ -66,11 +71,7 @@ function connectWeb(onView: (bytes: Uint8Array) => void): Engine {
 		bodies.then(() => onView(message.data));
 	};
 
-	const address = addressBar();
-	const send = (intent: IntentKind) => {
-		address.sent(intent.case === "openPath" ? "open-path" : "other");
-		worker.postMessage(encode(intent));
-	};
+	const send = (intent: IntentKind) => worker.postMessage(encode(intent));
 	const openShownPath = () =>
 		send({ case: "openPath", value: { path: location.pathname } });
 	addEventListener("popstate", openShownPath);
@@ -78,14 +79,16 @@ function connectWeb(onView: (bytes: Uint8Array) => void): Engine {
 
 	return {
 		send,
-		showPath: (path) => {
-			switch (address.step(location.pathname, path)) {
-				case "keep":
-					return;
-				case "push":
+		showPath: (path, step) => {
+			// The address bar shows it already: nothing to add or replace.
+			if (path === location.pathname) return;
+			switch (step) {
+				case HistoryStep.PUSH:
 					return history.pushState(null, "", path);
-				case "replace":
+				case HistoryStep.REPLACE:
 					return history.replaceState(null, "", path);
+				case HistoryStep.UNSPECIFIED:
+					return unset("ShellView.history");
 			}
 		},
 		bodySandbox: undefined,
@@ -110,4 +113,23 @@ export const useSend = () => useEngine().send;
 // An unset oneof or an UNSPECIFIED enum is a decode error, never a state.
 export function unset(what: string): never {
 	throw new Error(`The engine sent ${what} unset`);
+}
+
+// A oneof read where a switch statement does not fit (inside JSX): one arm per case, every case
+// required, and unset throws as `unset` does.
+type Oneof = { case: string | undefined; value?: unknown };
+type Arms<O extends Oneof, R> = {
+	[K in Exclude<O["case"], undefined>]: (
+		value: Extract<O, { case: K }>["value"],
+	) => R;
+};
+
+export function match<O extends Oneof, A extends Arms<O, unknown>>(
+	oneof: O,
+	what: string,
+	arms: A,
+): ReturnType<A[keyof A]> {
+	if (oneof.case === undefined) return unset(what);
+	const arm = arms[oneof.case as keyof A];
+	return arm(oneof.value as never) as ReturnType<A[keyof A]>;
 }

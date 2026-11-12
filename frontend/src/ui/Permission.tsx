@@ -6,22 +6,19 @@ import { SettingLine } from "./Lines";
 import { Segmented } from "./Segmented";
 
 // One action an agent may take, with its Off, Ask and Auto control: on an agent, in the builder
-// and in the settings' defaults. Choosing a level has no intent yet, so the control is drawn
-// without one. When Auto is not offered the contract's reason replaces the hint, in the warning
-// colour, and the control offers Off and Ask only.
-const levels = [
-	{ level: PermissionLevel.OFF, label: "Off" },
-	{ level: PermissionLevel.ASK, label: "Ask" },
-	{ level: PermissionLevel.AUTO, label: "Auto" },
-];
+// and in the settings' defaults; the caller sends the chosen level. When Auto is not offered the
+// contract's reason replaces the hint, in the warning colour, and the control offers Off and Ask.
+const off = { level: PermissionLevel.OFF, label: "Off" };
+const ask = { level: PermissionLevel.ASK, label: "Ask" };
+const auto = { level: PermissionLevel.AUTO, label: "Auto" };
 
 function offer({ levels: offered, hint }: Permission) {
 	switch (offered.case) {
 		case "all":
-			return { choices: levels, note: hint, noteClass: "subtle" };
+			return { choices: [off, ask, auto], note: hint, noteClass: "subtle" };
 		case "askAtMost":
 			return {
-				choices: levels.slice(0, 2),
+				choices: [off, ask],
 				note: offered.value.reason,
 				noteClass: "perm-warn",
 			};
@@ -30,7 +27,13 @@ function offer({ levels: offered, hint }: Permission) {
 	}
 }
 
-export function PermissionLine({ permission }: { permission: Permission }) {
+export function PermissionLine({
+	permission,
+	onLevel,
+}: {
+	permission: Permission;
+	onLevel: (level: PermissionLevel) => void;
+}) {
 	const touch = useLayout() === "phone";
 	const { choices, note, noteClass } = offer(permission);
 	return (
@@ -44,6 +47,7 @@ export function PermissionLine({ permission }: { permission: Permission }) {
 					key: label,
 					label,
 					selected: level === permission.level,
+					onSelect: () => onLevel(level),
 				}))}
 			/>
 		</SettingLine>

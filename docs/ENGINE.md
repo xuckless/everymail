@@ -9,6 +9,13 @@ How the Rust engine works beyond the rules in [AGENTS.md](../AGENTS.md), which h
 - The database is not encrypted; the operating system's disk encryption covers it. No secret is stored in it
 - Local search is SQLite FTS5, updated in the same transaction as the mail row. Search by meaning comes from the Backend
 
+## Backend port and the demo Backend
+
+- Everything the Backend does for the engine goes through one trait, the Backend port. The engine applies a local change to its SQLite replica in one transaction and reports it; work only the Backend can do (sending, agent runs, model output, sync, permission and cap decisions, due-time jobs such as snooze and scheduled sends) is requested through the port and comes back as updates
+- Until the real Backend exists, a demo implementation in `engine/src/demo/` plays it with scripted behaviour and a sample world delivered after sign-in. The hosts inject it; nothing outside that module knows it exists. It is replaced by the real Backend, not extended
+- Short-lived results of an action are one mechanism: outcomes (done or failed, per target) and one notice (undo or info), both sent in the shell view
+- What is open, expanded or being entered is engine state where it mixes with data (forms, replaced keys, expanded runs), and each typed field carries a revision that tells the Frontend when to drop what was typed
+
 ## Session
 
 - Desktop and mobile keep the session credential in the operating system's keychain

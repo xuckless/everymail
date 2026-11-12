@@ -14,7 +14,10 @@
 import {
 	Component,
 	type ReactNode,
+	useCallback,
+	useEffect,
 	useReducer,
+	useRef,
 	useState,
 	useSyncExternalStore,
 } from "react";
@@ -48,27 +51,53 @@ export function useOverlay() {
 	return { phase, dispatch };
 }
 
-// Input: text typed into a field before it is committed. Fields with no commit intent yet keep it
-// here and send it nowhere. `initial` is the engine's value, such as a default port.
-export function useDraft(initial = "") {
-	return useState(initial);
+// Input: what the user has typed or picked in a form before it is committed (by Enter, Send, Save
+// or a debounce). `initial` is the engine's value, such as a default port or a saved title; a form
+// of several values (an event's fields) keeps each value in its own draft.
+export function useDraft<Value = string>(
+	...initial: Value extends string ? [Value?] : [Value]
+): [Value, (next: Value) => void] {
+	return useState((initial[0] ?? "") as Value);
 }
 
-// Frame: a disclosure, such as a run of an agent expanded to its steps. The engine does not know
-// which are open; each one starts collapsed and the user toggles it.
-export type Disclosure = "collapsed" | "expanded";
+// Input: text typed into a field that has a commit intent sent on a debounce (a draft, an agent's
+// instructions, the builder's text). The pending send is input the engine has not taken yet: it
+// waits `ms` after the last keystroke, is replaced by the next one, and is sent at once by `flush`
+// (before an intent that must see it, such as Send) or when the field goes away.
+export type Debounce =
+	| { kind: "idle" }
+	| { kind: "pending"; timer: number; run: () => void };
 
-export function useDisclosure() {
-	const [disclosure, set] = useState<Disclosure>("collapsed");
-	return {
-		disclosure,
-		toggle: () =>
-			set((now) => (now === "collapsed" ? "expanded" : "collapsed")),
-	};
+export function useDebounce(ms = 400) {
+	const pending = useRef<Debounce>({ kind: "idle" });
+	const flush = useCallback(() => {
+		const now = pending.current;
+		if (now.kind === "idle") return;
+		clearTimeout(now.timer);
+		pending.current = { kind: "idle" };
+		now.run();
+	}, []);
+	useEffect(() => flush, [flush]);
+	const schedule = useCallback(
+		(run: () => void) => {
+			const now = pending.current;
+			if (now.kind === "pending") clearTimeout(now.timer);
+			const timer = window.setTimeout(() => {
+				pending.current = { kind: "idle" };
+				run();
+			}, ms);
+			pending.current = { kind: "pending", timer, run };
+		},
+		[ms],
+	);
+	return { schedule, flush };
 }
 
 // Frame: the measured viewport class. Below 820px the phone layout replaces the sidebar; below
 // 1180px the desktop drops the reading pane and the thread's reply panel. The only breakpoints.
+// It also decides which intent a list row sends (Inbox, Quarantine): with a reading pane beside
+// the list a click selects the row, without one it opens it. That is input handling, not state:
+// the same click means what the visible layout shows it will do, and the engine owns the result.
 export type Layout = "phone" | "list" | "split";
 
 const phoneQuery = "(max-width: 819.98px)";
@@ -92,30 +121,75 @@ export function useLayout(): Layout {
 	return useSyncExternalStore(onLayoutChange, layoutNow);
 }
 
-// Input: the web address bar. A path the browser loaded or went back to is input the engine has
-// not confirmed yet, so the view answering an open_path intent replaces the history entry, while a
-// view answering any other intent pushes one. Web only; Tauri has no address bar.
-export type LastSent = "open-path" | "other";
-export type AddressStep = "keep" | "push" | "replace";
+// Frame: the user's last press, the point what it opens grows from (motion rules 11 and 12): the
+// composer, and the theme's circular reveal (design/README.md). The engine's answer arrives a
+// frame after the press; the first to take the press uses it. A key press clears it, so what a key
+// opens (⌘N, Enter) grows from its own place, and a change the user did not just press for (the
+// first view, another device) has none.
+export type Press = { kind: "none" } | { kind: "at"; x: number; y: number };
+let press: Press = { kind: "none" };
 
-export function addressStep(
-	shown: string,
-	path: string,
-	lastSent: LastSent,
-): AddressStep {
-	if (shown === path) return "keep";
-	return lastSent === "open-path" ? "replace" : "push";
+export function watchPresses() {
+	const at = (event: PointerEvent) => {
+		press = { kind: "at", x: event.clientX, y: event.clientY };
+	};
+	const key = () => {
+		press = { kind: "none" };
+	};
+	addEventListener("pointerdown", at, true);
+	addEventListener("keydown", key, true);
 }
 
-// Startup sends open_path for the loaded address, so the first views answer it.
-export function addressBar() {
-	let lastSent: LastSent = "open-path";
-	return {
-		sent(kind: LastSent) {
-			lastSent = kind;
-		},
-		step: (shown: string, path: string) => addressStep(shown, path, lastSent),
+export function takePress(): Press {
+	const now = press;
+	press = { kind: "none" };
+	return now;
+}
+
+// The engine's theme and density on the document root, where the design package's CSS reads them:
+// written from the view, never read back. A theme the user pressed for is revealed with View
+// Transitions where they exist, from the press; elsewhere the colours crossfade (`theme-fade`)
+// until the body's colour transitions end.
+export function showTheme(
+	theme: "dark" | "light" | "system",
+	timing: { duration: number; easing: string },
+) {
+	const root = document.documentElement;
+	const apply = () => {
+		if (theme === "system") delete root.dataset.theme;
+		else root.dataset.theme = theme;
 	};
+	const now = takePress();
+	switch (now.kind) {
+		case "none":
+			apply();
+			return;
+		case "at":
+			break;
+	}
+	if (!document.startViewTransition) {
+		root.classList.add("theme-fade");
+		apply();
+		requestAnimationFrame(() => {
+			Promise.allSettled(
+				document.body.getAnimations().map((animation) => animation.finished),
+			).then(() => root.classList.remove("theme-fade"));
+		});
+		return;
+	}
+	const at = `${now.x}px ${now.y}px`;
+	document
+		.startViewTransition(apply)
+		.ready.then(() =>
+			root.animate(
+				{ clipPath: [`circle(0px at ${at})`, `circle(160% at ${at})`] },
+				{ ...timing, pseudoElement: "::view-transition-new(root)" },
+			),
+		);
+}
+
+export function showDensity(density: "compact" | "comfortable" | "roomy") {
+	document.documentElement.dataset.density = density;
 }
 
 // Not presentation state, and the one exception: React reports a render error only through the

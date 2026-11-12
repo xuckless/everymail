@@ -13,6 +13,9 @@ export function Field({
 	placeholder,
 	hint,
 	hideLabel,
+	onEnter,
+	onBlur,
+	autoFocus,
 	className,
 }: {
 	label: string;
@@ -23,6 +26,11 @@ export function Field({
 	placeholder?: string;
 	hint?: string;
 	hideLabel?: boolean;
+	// A one-line field's commit, on Enter.
+	onEnter?: () => void;
+	// Leaving the field: a debounced field sends what is pending.
+	onBlur?: () => void;
+	autoFocus?: boolean;
 	className?: string;
 }) {
 	const id = useId();
@@ -30,6 +38,8 @@ export function Field({
 		id,
 		value,
 		placeholder,
+		autoFocus,
+		onBlur,
 		onChange: (event: { target: { value: string } }) =>
 			onChange(event.target.value),
 	};
@@ -41,7 +51,16 @@ export function Field({
 			{rows ? (
 				<textarea rows={rows} {...common} />
 			) : (
-				<input type={type} {...common} />
+				<input
+					type={type}
+					{...common}
+					onKeyDown={(event) => {
+						if (event.key === "Enter" && onEnter) {
+							event.preventDefault();
+							onEnter();
+						}
+					}}
+				/>
 			)}
 			{hint && <span className="xs subtle">{hint}</span>}
 		</span>

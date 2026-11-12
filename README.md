@@ -7,7 +7,7 @@
 
 **The mail client for every inbox, with agents you control**
 
-Early: the architecture and a walking skeleton are in place, the features are not.
+Early: the whole interface works against a local database and a scripted stand-in for the Backend. The real Backend is not built yet.
 
 <a href="https://github.com/xuckless/everymail/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/xuckless/everymail/ci.yml?branch=main&style=flat-square&label=CI"/></a> <a href="#license"><img alt="License: FSL-1.1-ALv2" src="https://img.shields.io/badge/license-FSL--1.1--ALv2-7756E4?style=flat-square"/></a>
 
@@ -70,6 +70,8 @@ bun run check          # lint, types, clippy, tests
 - `engine/` the Rust crate
 - `desktop/` the Tauri shell
 - `frontend/` the React UI
+- `design/` tokens, component CSS and icons shared by the app and the site
+- `site/` the landing page
 
 Rules are in [AGENTS.md](AGENTS.md), and how each part works is in [docs/BACKEND.md](docs/BACKEND.md) and [docs/ENGINE.md](docs/ENGINE.md). The roadmap is in [TODO-backend.md](TODO-backend.md), [TODO-rust-core.md](TODO-rust-core.md) and [TODO-frontend.md](TODO-frontend.md).
 

@@ -14,3 +14,17 @@ export function isActive(status: AgentStatus | undefined): boolean {
 			return unset("AgentStatus");
 	}
 }
+
+// Run now waits while a run is under way.
+export function isRunning(status: AgentStatus | undefined): boolean {
+	switch (status?.state.case) {
+		case "running":
+			return true;
+		case "idle":
+		case "waiting":
+		case "deactivated":
+			return false;
+		case undefined:
+			return unset("AgentStatus");
+	}
+}

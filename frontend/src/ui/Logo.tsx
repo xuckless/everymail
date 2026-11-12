@@ -3,9 +3,11 @@ import { unset } from "../engine";
 import {
 	CalendarProvider,
 	MailProvider,
+	type Model,
 	ModelProvider,
 	SignInProvider,
 } from "../gen/ui/v1/common_pb";
+import { cx } from "./cx";
 
 // Every company mark and the app's own: the one place a provider enum becomes a logo.
 export type Brand =
@@ -103,13 +105,12 @@ export function Logo({
 }) {
 	return (
 		<svg
-			className={className}
+			className={cx("logo", className)}
 			width={size}
 			height={size}
 			role={label ? "img" : undefined}
 			aria-label={label}
 			aria-hidden={label ? undefined : true}
-			style={{ flex: "none" }}
 		>
 			<use href={`${logos}#${logoId(brand)}`} />
 		</svg>
@@ -128,10 +129,21 @@ export function LogoTile({
 }) {
 	return (
 		<span
-			className="logo-tile"
-			style={{ width: box, height: box, borderRadius: Math.round(box * 0.28) }}
+			className={cx("logo-tile", box >= 48 && "big")}
+			style={{ width: box, height: box }}
 		>
 			<Logo brand={brand} size={size} />
 		</span>
+	);
+}
+
+// A model as on a model chip: its provider's logo and its name.
+export function ModelChip({ model }: { model: Model | undefined }) {
+	if (!model) return unset("Model");
+	return (
+		<>
+			<Logo brand={{ kind: "model", provider: model.provider }} size={18} />
+			<span className="sm">{model.name}</span>
+		</>
 	);
 }

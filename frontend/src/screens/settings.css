@@ -20,8 +20,8 @@
 	display: flex;
 	align-items: center;
 	padding: 0 12px;
-	border-radius: 9px;
-	font-size: 14px;
+	border-radius: var(--radius-md);
+	font-size: var(--fs-body);
 	color: var(--muted);
 }
 .settings-nav-item.on {
@@ -44,12 +44,11 @@
 	height: 100%;
 }
 .settings-page {
-	max-width: 680px;
-	margin: 0 auto;
-	padding: 32px 32px 48px;
+	max-width: 880px;
+	padding: var(--space-6) var(--space-6) var(--space-8);
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
+	gap: var(--space-6);
 }
 .settings-lede {
 	margin-top: -12px;
@@ -85,10 +84,6 @@
 	align-items: center;
 	gap: 12px;
 }
-.settings-signature {
-	padding: 10px 12px;
-	white-space: pre-line;
-}
 .settings-rule {
 	padding: 14px var(--space-4);
 	display: flex;
@@ -114,18 +109,15 @@
 .settings-key-logo {
 	margin: 0 3px;
 }
-.settings-ok {
-	color: var(--ok);
-}
 .settings-key-field {
 	margin-top: 4px;
 }
 .settings-key-field input {
 	height: 32px;
 	padding: 0 10px;
-	border-radius: 9px;
+	border-radius: var(--radius-md);
 	background: var(--overlay);
-	font-size: 13px;
+	font-size: var(--fs-small);
 }
 .settings-notice {
 	padding: 14px var(--space-4);
@@ -150,7 +142,7 @@
 	width: 160px;
 	height: 40px;
 	padding: 0 12px;
-	border-radius: 10px;
+	border-radius: var(--radius-md);
 	background: var(--raised);
 }
 .settings-appearance-seg {
@@ -158,9 +150,6 @@
 }
 .settings-export {
 	min-width: 120px;
-}
-.settings-danger {
-	color: var(--bad);
 }
 
 /* phone: one column, the section list collapsed into a menu on top */
@@ -201,10 +190,56 @@
 	width: 120px;
 }
 .settings-accounts {
-	gap: var(--space-5);
+	gap: var(--space-3);
 }
 .settings-head {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
+}
+.settings-signature-edit {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+.settings-signature-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+.settings-manage {
+	width: 200px;
+}
+.settings-new-rule {
+	padding: var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+.settings-rule-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-3);
+}
+.settings-phone .settings-rule-fields {
+	grid-template-columns: minmax(0, 1fr);
+}
+.settings-rule-foot {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.settings-task-menu {
+	max-height: 320px;
+	overflow: auto;
+}
+.settings-export-state {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	min-width: 200px;
+	text-align: right;
+}
+.settings-export-bar {
+	width: 200px;
 }

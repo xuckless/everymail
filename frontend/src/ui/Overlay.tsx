@@ -46,10 +46,125 @@ function useDismiss(
 	}, [active, dismiss, inside]);
 }
 
+const focusable =
+	'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+// Keyboard for a menu or popover dialog (WAI-ARIA menu pattern), on the DOM it renders: opening
+// moves focus to the checked item (or the first); ArrowUp, ArrowDown, Home and End move between
+// items; closing returns focus to the trigger when it was inside. Nothing is kept: focus is read
+// from the document each time.
+function usePopoverFocus(
+	shown: boolean,
+	anchor: { current: HTMLElement | null },
+	role: "menu" | "dialog",
+) {
+	useEffect(() => {
+		const root = anchor.current;
+		if (!shown || !root) return;
+		const trigger = root.querySelector<HTMLElement>("[aria-haspopup]");
+		const items = () => [
+			...root.querySelectorAll<HTMLElement>(
+				role === "menu"
+					? '.pop [role^="menuitem"]:not(:disabled)'
+					: `.pop :is(${focusable})`,
+			),
+		];
+		const first = items().find(
+			(item) => item.getAttribute("aria-checked") === "true",
+		);
+		(first ?? items()[0])?.focus();
+		const key = (event: KeyboardEvent) => {
+			const all = items();
+			const at = all.indexOf(document.activeElement as HTMLElement);
+			const to = (index: number) => {
+				event.preventDefault();
+				all[(index + all.length) % all.length]?.focus();
+			};
+			switch (event.key) {
+				case "ArrowDown":
+					return to(at + 1);
+				case "ArrowUp":
+					return to(at - 1);
+				case "Home":
+					return to(0);
+				case "End":
+					return to(all.length - 1);
+			}
+		};
+		root.addEventListener("keydown", key);
+		return () => {
+			root.removeEventListener("keydown", key);
+			const active = document.activeElement;
+			if (active === document.body || root.contains(active)) trigger?.focus();
+		};
+	}, [shown, anchor, role]);
+}
+
+// A modal sheet or drawer (aria-modal): focus moves in when it opens, Tab and Shift+Tab stay
+// inside, everything outside it is inert, Escape calls `onEscape`, and closing gives focus back to
+// where it was.
+function useModal(
+	dialog: { current: HTMLElement | null },
+	onEscape?: () => void,
+) {
+	useEffect(() => {
+		const root = dialog.current;
+		if (!root) return;
+		const before = document.activeElement as HTMLElement | null;
+		const outside: HTMLElement[] = [];
+		for (
+			let at: HTMLElement | null = root;
+			at && at !== document.body;
+			at = at.parentElement
+		) {
+			for (const sibling of at.parentElement?.children ?? []) {
+				if (
+					sibling !== at &&
+					sibling instanceof HTMLElement &&
+					!sibling.inert &&
+					!sibling.classList.contains("scrim")
+				) {
+					sibling.inert = true;
+					outside.push(sibling);
+				}
+			}
+		}
+		root.querySelector<HTMLElement>(focusable)?.focus();
+		const key = (event: KeyboardEvent) => {
+			if (event.key !== "Tab") return;
+			const all = [...root.querySelectorAll<HTMLElement>(focusable)];
+			const first = all[0];
+			const last = all.at(-1);
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last?.focus();
+			} else if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first?.focus();
+			}
+		};
+		root.addEventListener("keydown", key);
+		return () => {
+			root.removeEventListener("keydown", key);
+			for (const element of outside) element.inert = false;
+			before?.focus();
+		};
+	}, [dialog]);
+	useEffect(() => {
+		const root = dialog.current;
+		if (!root || !onEscape) return;
+		const key = (event: KeyboardEvent) => {
+			if (event.key === "Escape") onEscape();
+		};
+		root.addEventListener("keydown", key);
+		return () => root.removeEventListener("keydown", key);
+	}, [dialog, onEscape]);
+}
+
 export type TriggerProps = {
 	onClick: () => void;
 	"aria-expanded": boolean;
-	"aria-haspopup": "menu";
+	"aria-haspopup": "menu" | "dialog";
 };
 
 // A menu that enters from and exits to its trigger: below the trigger's `align` corner (`stretch`
@@ -58,12 +173,18 @@ export type TriggerProps = {
 export function Popover({
 	label,
 	align = "start",
+	side = "below",
+	role = "menu",
 	className,
 	trigger,
 	children,
 }: {
 	label: string;
 	align?: "start" | "end" | "stretch";
+	// Above for a trigger near the bottom of the screen, such as the composer's.
+	side?: "below" | "above";
+	// A confirmation is a dialog, not a menu.
+	role?: "menu" | "dialog";
 	className?: string;
 	trigger: (props: TriggerProps) => ReactNode;
 	children: (dismiss: () => void) => ReactNode;
@@ -76,6 +197,7 @@ export function Popover({
 		() => dispatch("dismiss"),
 		(target) => anchor.current?.contains(target) ?? false,
 	);
+	usePopoverFocus(shown, anchor, role);
 	return (
 		<span
 			ref={anchor}
@@ -84,12 +206,19 @@ export function Popover({
 			{trigger({
 				onClick: () => dispatch("toggle"),
 				"aria-expanded": phase === "opening" || phase === "open",
-				"aria-haspopup": "menu",
+				"aria-haspopup": role,
 			})}
 			{shown && (
+				// biome-ignore lint/a11y/useAriaPropsSupportedByRole: the role is menu or dialog, both of which take a label
 				<div
-					className={cx("pop", motionOf(phase), `pop-${align}`, className)}
-					role="menu"
+					className={cx(
+						"pop",
+						motionOf(phase),
+						`pop-${align}`,
+						side === "above" && "pop-above",
+						className,
+					)}
+					role={role}
 					aria-label={label}
 					onAnimationEnd={(event) => own(event, () => dispatch("settled"))}
 				>
@@ -115,10 +244,13 @@ function Sheet({
 	onSettled,
 	children,
 }: SheetProps & { motion: "in" | "out"; onSettled: () => void }) {
+	const dialog = useRef<HTMLDivElement>(null);
+	useModal(dialog, onDismiss);
 	return (
 		<>
 			<div className={cx("scrim", motion)} onClick={onDismiss} aria-hidden />
 			<div
+				ref={dialog}
 				className={cx("sheet", motion)}
 				role="dialog"
 				aria-modal="true"
@@ -184,13 +316,17 @@ export function PresentDrawer({
 	children: ReactNode;
 }) {
 	const { present, motion, settled } = usePresent();
+	const dialog = useRef<HTMLDivElement>(null);
 	useDismiss(present, onClose, nowhere);
+	useModal(dialog);
 	return (
 		<>
 			<div className={cx("scrim", motion)} onClick={onClose} aria-hidden />
 			<div
+				ref={dialog}
 				className={cx("drawer-r", motion, className)}
 				role="dialog"
+				aria-modal="true"
 				aria-label={label}
 				onAnimationEnd={(event) => own(event, settled)}
 			>

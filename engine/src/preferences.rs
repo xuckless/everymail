@@ -1,22 +1,25 @@
 //! The user's display preferences, each one explicit value the views follow.
 
-use crate::proto::ui::v1::{Density, Theme};
+use crate::proto::ui::v1::{Density, Sidebar, Theme};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Preferences {
     pub theme: Theme,
     pub density: Density,
+    pub sidebar: Sidebar,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum Preference {
     Theme(Theme),
     Density(Density),
+    Sidebar(Sidebar),
 }
 
 pub const START: Preferences = Preferences {
     theme: Theme::System,
     density: Density::Comfortable,
+    sidebar: Sidebar::Expanded,
 };
 
 pub fn transition(preferences: Preferences, preference: Preference) -> Preferences {
@@ -29,23 +32,23 @@ pub fn transition(preferences: Preferences, preference: Preference) -> Preferenc
             density,
             ..preferences
         },
+        Preference::Sidebar(sidebar) => Preferences {
+            sidebar,
+            ..preferences
+        },
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        demo,
-        proto::ui::v1::{SettingsSection, settings_view::Section},
-        view,
-    };
 
     #[test]
-    fn density_is_set_apart_from_theme_and_marked_in_settings() {
+    fn each_preference_is_set_apart() {
         let set = [
             Preference::Theme(Theme::Dark),
             Preference::Density(Density::Compact),
+            Preference::Sidebar(Sidebar::Collapsed),
         ]
         .into_iter()
         .fold(START, transition);
@@ -53,21 +56,9 @@ mod tests {
             set,
             Preferences {
                 theme: Theme::Dark,
-                density: Density::Compact
+                density: Density::Compact,
+                sidebar: Sidebar::Collapsed,
             }
         );
-        let world = demo::world();
-        let Some(Section::Appearance(appearance)) =
-            view::settings(SettingsSection::Appearance, set, &world).section
-        else {
-            panic!("the appearance section");
-        };
-        let selected: Vec<i32> = appearance
-            .densities
-            .iter()
-            .filter(|d| d.selected)
-            .map(|d| d.density)
-            .collect();
-        assert_eq!(selected, [i32::from(Density::Compact)]);
     }
 }

@@ -4,7 +4,10 @@ import "./ui/ui.css";
 import "./chrome/chrome.css";
 import { createRoot } from "react-dom/client";
 import { connectEngine } from "./engine";
+import { watchPresses } from "./presentation";
 import { App } from "./shell";
+
+watchPresses();
 
 const container = document.createElement("div");
 container.id = "root";

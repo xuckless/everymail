@@ -1,4 +1,5 @@
 ---
+import { anyOf, modelProviders } from "@everymail/design/brands";
 import mark from "../../../assets/mark.svg?url";
 import Icon from "../components/Icon.astro";
 import Logo from "../components/Logo.astro";
@@ -170,10 +171,12 @@ const initialAsks = perms
 	</header>
 
 	<section id="top" class="wrap col center hero">
+		<!-- The two titles with a period inside ("Every inbox. One client", "Keep your addresses. Lose
+		     the tabs") are the approved landing design's: two short sentences, no period at the end. -->
 		<h1 class="settle">Every inbox. One client, with agents that never clock out</h1>
 		<p class="settle muted stagger" style="--i: 2">Bring Gmail, Outlook, iCloud and any IMAP account into one fast client. Then hand the busywork to agents that run on a schedule, by your rules.</p>
 		<form id="join" class="settle stagger" style="--i: 4">
-			<label class="sr" for="email">Email address</label>
+			<label class="sr-only" for="email">Email address</label>
 			<input id="email" name="email" type="email" required placeholder="you@domain.com" autocomplete="email" />
 			<button type="submit" class="btn lg primary press fillbtn">
 				<span class="fill"></span>
@@ -213,7 +216,7 @@ const initialAsks = perms
 					<button class="btn soft press">
 						<span class="swap">
 							<span {...idle("idle sorting outcomes")}><Icon name="play" /></span>
-							<span {...idle("done")} style="color: var(--ok)"><Icon name="check" /></span>
+							<span {...idle("done")}><Icon name="check" class="ok" /></span>
 						</span>
 						Run Gatekeeper now
 					</button>
@@ -236,7 +239,7 @@ const initialAsks = perms
 		<div class="split">
 			<div class="col">
 				<h2>Agents that keep working while you don't</h2>
-				<p class="lede">Four agents come with every account: Gatekeeper sorts every new mail, Security Guard quarantines scams, Scribe summarises and suggests replies, News Bearer writes your briefing. Add your own in plain words, with your own Anthropic, OpenAI, Gemini or OpenRouter key, and see exactly what each one did.</p>
+				<p class="lede">Four agents come with every account: Gatekeeper sorts every new mail, Security Guard quarantines scams, Scribe summarises and suggests replies, News Bearer writes your briefing. Add your own in plain words, with your own {anyOf(modelProviders)} key, and see exactly what each one did.</p>
 				<div class="seg tabs" role="radiogroup" aria-label="System agents" style={`--n: ${agents.length}`}>
 					<span class="ind"></span>
 					{agents.map((a, i) => <label class="opt">{a.name}<input type="radio" name="agent" value={a.id} checked={i === 0} /></label>)}
@@ -292,7 +295,7 @@ const initialAsks = perms
 		<div class="providers">
 			{providers.map((p, i) => (
 				<div class="tile row-in stagger" style={`--i: ${i}`}>
-					<span><Logo name={p.logo} size={22} /></span>
+					<span class="logo-tile" style="width: 36px; height: 36px"><Logo name={p.logo} size={22} /></span>
 					<span><b>{p.name}</b><span class="xs subtle trunc">{p.how}</span></span>
 				</div>
 			))}

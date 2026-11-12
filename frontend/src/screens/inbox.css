@@ -1,3 +1,31 @@
+.search {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.search-box {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	height: 36px;
+	padding: 0 4px 0 var(--space-3);
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+	box-shadow: inset 0 0 0 1px var(--line);
+}
+.search-box.touch {
+	height: 44px;
+}
+.search-box input {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	background: transparent;
+	font-size: var(--fs-body);
+}
+.search-box input::-webkit-search-cancel-button {
+	display: none;
+}
 .note-waiting {
 	color: var(--warn);
 }
@@ -17,7 +45,7 @@
 }
 .phone-row {
 	padding: calc(var(--row-pad) + 2px) var(--space-3);
-	border-radius: 14px;
+	border-radius: var(--radius-xl);
 }
 .phone-row .row-dot {
 	margin-top: 7px;
@@ -26,11 +54,11 @@
 	font-weight: 600;
 }
 .phone-from {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	font-weight: 500;
 }
 .phone-subject {
-	font-size: 14px;
+	font-size: var(--fs-body);
 }
 .fab {
 	position: absolute;

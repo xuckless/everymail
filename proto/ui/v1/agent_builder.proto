@@ -24,12 +24,45 @@ message AgentBuilderView {
     DryRunIdle idle = 10;
     DryRunReading reading = 11;
     DryRunResults results = 12;
+    DryRunFailed failed = 17;
   }
   // The agent in short, as in the phone's last step: "Wakes", "Asks first".
   repeated SummaryLine summary = 13;
   // The steps a narrow layout walks one at a time, in order and ending in the summary, one of them
   // current (Intent.select_builder_step). A wide layout shows everything and ignores which is current.
   repeated BuilderStepTab steps = 14;
+  // Create is Intent.create_agent.
+  oneof creation {
+    BuilderReady ready = 15;
+    BuilderIncomplete incomplete = 16;
+  }
+  // Changes when the engine replaced the name or the instructions (an idea picked, the builder
+  // started over or created): the Frontend drops what was typed in them.
+  uint32 revision = 18;
+  // The narrow layout's Back: the step before the current one, or none on the first step, where
+  // Back leaves the builder (Intent.back).
+  oneof back {
+    BuilderStep back_step = 19;
+    BuilderFirstStep first = 20;
+  }
+  // Continue: the step after the current one, or none on the summary, where Create is shown.
+  oneof forward {
+    BuilderStep next_step = 21;
+    BuilderLastStep last = 22;
+  }
+  // How far along the steps the current one is, from 25 to 100.
+  uint32 progress_percent = 23;
+}
+
+message BuilderFirstStep {}
+
+message BuilderLastStep {}
+
+message BuilderReady {}
+
+message BuilderIncomplete {
+  // "Name it", "Pick the agent “Another agent finished” waits for"
+  string text = 1;
 }
 
 // The phone design's steps. The phone shows neither the accounts nor the new-recipient switch,
@@ -62,23 +95,73 @@ message BuilderTrigger {
   repeated TriggerFilter filters = 4;
   // The filters in one line: "Into For you, from anyone, Personal and Laurentian"
   string filter_summary = 5;
+  oneof readiness {
+    TriggerReady ready = 6;
+    // Chosen, with a required filter not picked.
+    TriggerIncomplete incomplete = 7;
+  }
+}
+
+message TriggerReady {}
+
+message TriggerIncomplete {
+  // "Pick the agent it waits for"
+  string text = 1;
 }
 
 message TriggerFilter {
-  string key = 1;
-  string value = 2;
+  reserved 1, 2, 3;
+  reserved "key", "value", "options";
+  // The filter's stable id, which Intent.set_trigger_filter takes: "sender", "agent".
+  string id = 4;
+  // "Sender"
+  string label = 5;
+  // What Intent.set_trigger_filter takes, by id; the picked one is selected.
+  repeated FilterChoice choices = 6;
+  oneof pick {
+    FilterPicked picked = 7;
+    // A required filter (the agent, the file) nobody picked yet; no choice is selected.
+    FilterNotPicked not_picked = 8;
+  }
+}
+
+message FilterChoice {
+  // "known", "account-2", "folder-3"
+  string id = 1;
+  // "Known contacts"
+  string label = 2;
+  bool selected = 3;
+}
+
+message FilterPicked {
+  // The picked choice's label: "Anyone"
+  string label = 1;
+}
+
+message FilterNotPicked {
+  // "Pick an agent"
+  string placeholder = 1;
 }
 
 message BuilderSchedule {
-  // Every choice, "No schedule" first.
+  // Every choice, "No schedule" (id "none") first; Intent.set_builder_schedule takes the id.
   repeated ScheduleChoice choices = 1;
   oneof state {
     Unscheduled none = 2;
     Scheduled scheduled = 3;
   }
+  reserved 4;
+  reserved "interval_seconds";
+  // The custom schedule's interval in minutes, as its field shows it: "15". Intent.set_builder_interval
+  // takes the field's text.
+  string interval_minutes = 6;
+  // "At least every 15 minutes"
+  string interval_hint = 5;
 }
 
 message ScheduleChoice {
+  // "none", "hourly", "weekdays-9", "custom"
+  string id = 3;
   string label = 1;
   bool selected = 2;
 }
@@ -98,11 +181,21 @@ message BuilderAccount {
   bool can_see = 5;
 }
 
-message DryRunIdle {}
+message DryRunIdle {
+  // "A dry run on your last 30 messages. Nothing is sent, moved or changed"
+  string text = 1;
+}
 
+// Intent.cancel_dry_run stops it.
 message DryRunReading {
   // "Reading 30 messages across 2 accounts"
   string progress = 1;
+}
+
+// Intent.start_dry_run tries again.
+message DryRunFailed {
+  // "The dry run did not finish in time"
+  string reason = 1;
 }
 
 message DryRunResults {

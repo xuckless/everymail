@@ -105,4 +105,30 @@ mod tests {
         assert_eq!(parse("m-1"), ("m-1", Theme::System));
         assert_eq!(parse("m-1?theme=sepia"), ("m-1", Theme::System));
     }
+
+    #[test]
+    fn a_document_escapes_the_text_and_carries_only_the_nonced_script() {
+        let html = String::from_utf8(document(
+            &["Hi <b>Mira</b> & \"you\"", "line one\nline two"],
+            Theme::Dark,
+            "n0nce",
+        ))
+        .unwrap();
+        assert!(html.contains("<p>Hi &lt;b&gt;Mira&lt;/b&gt; &amp; &quot;you&quot;</p>"));
+        assert!(html.contains("<p>line one<br>line two</p>"));
+        assert!(html.contains("script-src 'nonce-n0nce'"));
+        assert_eq!(html.matches("<script").count(), 1);
+        assert!(html.contains("<script nonce=\"n0nce\">"));
+        assert!(html.contains(TEXT_DARK));
+    }
+
+    #[test]
+    fn escaping_leaves_plain_text_alone() {
+        let mut out = String::new();
+        escape("Café 10:00 – 11:00", &mut out);
+        assert_eq!(out, "Café 10:00 – 11:00");
+        out.clear();
+        escape("<script>&", &mut out);
+        assert_eq!(out, "&lt;script&gt;&amp;");
+    }
 }

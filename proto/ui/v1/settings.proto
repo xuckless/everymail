@@ -3,6 +3,7 @@ syntax = "proto3";
 package ui.v1;
 
 import "ui/v1/common.proto";
+import "ui/v1/thread.proto";
 
 enum SettingsSection {
   SETTINGS_SECTION_UNSPECIFIED = 0;
@@ -41,18 +42,19 @@ message AccountsSettings {
 }
 
 message SettingsAccount {
-  reserved 4;
+  reserved 4, 5;
+  reserved "status";
   string id = 1;
   string name = 2;
   MailProvider provider = 3;
-  // Its dot; the label is in `status_line`.
-  AccountStatus status = 5;
   oneof signature {
     string text = 6;
     NoSignature none = 7;
   }
   // The line under the name: "iCloud Mail over IMAP · App password expired"
   string status_line = 8;
+  // Its dot; the label is in `status_line`.
+  AccountState state = 9;
 }
 
 message NoSignature {}
@@ -66,18 +68,96 @@ message AgentPermissionsSettings {
   bool agents_paused = 3;
 }
 
-// Fixed checks on every new mail, before any agent.
+// Fixed checks on every new mail, before any agent: one condition and one or more actions. A new
+// rule is Intent.add_rule with a condition and actions taken from the choices.
 message RulesSettings {
   repeated Rule rules = 1;
+  repeated RuleConditionChoice conditions = 2;
+  repeated RuleActionChoice actions = 3;
+  // The new rule form (DisclosureTarget.form FORM_NEW_RULE). It closes when the rule is added.
+  Disclosure new_rule = 4;
+  // Changes when the form's text is cleared.
+  uint32 new_rule_revision = 5;
 }
 
 message Rule {
+  reserved 2, 3, 5, 6;
+  reserved "when", "then", "applied", "not_applied";
   string id = 1;
-  // "sender domain is laurentian.ca"
-  string when = 2;
-  // "mark important and notify me"
-  string then = 3;
   bool enabled = 4;
+  // "sender domain is laurentian.ca → mark important"
+  string text = 7;
+  RuleCondition condition = 8;
+  repeated RuleAction actions = 9;
+}
+
+message RuleCondition {
+  oneof condition {
+    // The sender's name or address contains this: "mira@laurentian.ca"
+    string sender_contains = 1;
+    // The sender's domain, subdomains included: "laurentian.ca"
+    string sender_domain = 2;
+    // The subject contains any of the words.
+    SubjectWords subject_contains = 3;
+    NewsletterMail newsletter = 4;
+    NewSenderWithLink new_sender_with_link = 5;
+  }
+}
+
+message SubjectWords {
+  repeated string words = 1;
+}
+
+message NewsletterMail {}
+
+// The user has not written to the sender, and the mail has a link.
+message NewSenderWithLink {}
+
+message RuleAction {
+  oneof action {
+    string move_to_folder_id = 1;
+    ArchiveMail archive = 2;
+    TrashMail trash = 3;
+    MarkImportant mark_important = 4;
+    string hand_to_agent_id = 5;
+    // Kept out of the inbox for News Bearer's newsletters section.
+    KeepForBriefing keep_for_briefing = 6;
+  }
+}
+
+message ArchiveMail {}
+
+message TrashMail {}
+
+message MarkImportant {}
+
+message KeepForBriefing {}
+
+message RuleConditionChoice {
+  // What Intent.add_rule sends for it; a text or words condition with its parameter empty, for the
+  // user to fill.
+  RuleCondition condition = 1;
+  // "Sender domain is"
+  string label = 2;
+  oneof parameter {
+    RuleNoParameter none = 3;
+    RuleTextParameter text = 4;
+  }
+}
+
+message RuleNoParameter {}
+
+message RuleTextParameter {
+  // "laurentian.ca"
+  string placeholder = 1;
+}
+
+// One per folder or agent for the actions that name one.
+message RuleActionChoice {
+  // What Intent.add_rule sends for it.
+  RuleAction action = 1;
+  // "Move to Receipts", "Archive"
+  string label = 2;
 }
 
 // Mail from these senders goes straight to Quarantine.
@@ -109,11 +189,21 @@ message ModelsSettings {
   repeated ProviderKey providers = 3;
   // Model for each task.
   repeated TaskModel tasks = 4;
+  // The budget switch: off for unlimited, on for entering (DisclosureTarget.form FORM_BUDGET) and
+  // for a daily budget, whose field shows its tokens.
   oneof budget {
     NoBudget unlimited = 5;
     DailyBudget daily = 6;
+    BudgetEntering entering = 8;
   }
+  reserved 7;
+  reserved "models";
+  // Changes when the budget's field is set again from the saved budget.
+  uint32 budget_revision = 9;
 }
+
+// No budget yet; its field is open. Saving one closes it.
+message BudgetEntering {}
 
 message NoKeySet {}
 
@@ -125,22 +215,33 @@ message ProviderKey {
   oneof state {
     KeySet set = 3;
     KeyMissing missing = 4;
+    KeyReplacing replacing = 6;
   }
   // The key field's label: "Anthropic key"
   string key_label = 5;
+  // Changes when the key was saved: the Frontend empties its field.
+  uint32 revision = 7;
 }
 
-// A key is stored, encrypted and never shown again.
+// A key is stored, encrypted and never shown again. Replace is Intent.open_disclosure with
+// DisclosureTarget.key.
 message KeySet {}
+
+// A set key, with the field to paste a new one; it closes when the new key is saved.
+message KeyReplacing {}
 
 message KeyMissing {}
 
 message TaskModel {
+  // The task's stable id, which Intent.set_task_model takes: "replies", "summaries", "agents".
+  string id = 4;
   // "Writing replies"
   string task = 1;
   // "AI compose and drafts"
   string hint = 2;
   Model model = 3;
+  // The task's model menu, its model selected.
+  repeated ModelChoice choices = 5;
 }
 
 message NoBudget {}
@@ -171,5 +272,36 @@ message DensityChoice {
   Density density = 3;
 }
 
-// Export and delete account; no data shown.
-message YourDataSettings {}
+// Export (Intent.export_data), delete account (Intent.delete_user_account) and reset the local data
+// (Intent.reset_local_data).
+message YourDataSettings {
+  oneof export {
+    ExportIdle idle = 1;
+    ExportRunning running = 2;
+    ExportReady ready = 3;
+    ExportFailed failed = 4;
+  }
+}
+
+message ExportIdle {}
+
+// Intent.cancel_export stops it.
+message ExportRunning {
+  // "Preparing your export · 40%"
+  string label = 1;
+  // From 0 to 100.
+  uint32 percent = 2;
+}
+
+message ExportReady {
+  // "Your export is ready: 2,140 messages, 15 events, 9 agents"
+  string text = 1;
+  // "everymail-export-2026-11-11.zip · 48 MB"
+  string file = 2;
+}
+
+// Intent.export_data tries again.
+message ExportFailed {
+  // "The export did not finish in time"
+  string reason = 1;
+}

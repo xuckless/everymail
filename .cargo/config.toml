@@ -1,0 +1,7 @@
+# The web engine is downloaded, so its wasm32 build optimises for size: the Rust code and SQLite's
+# C code (built by sqlite-wasm-rs through the cc crate). Native builds keep the release profile.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "opt-level=z"]
+
+[env]
+CFLAGS_wasm32_unknown_unknown = "-Oz"

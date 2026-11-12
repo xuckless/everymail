@@ -1,59 +1,58 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useId } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { useSend } from "../engine";
 
-// A list whose selection the engine holds, as a listbox: the view's selected row is the active
-// descendant, and the keyboard sends intents. Up and Down select the neighbouring rendered option
-// (by pressing its `[data-select]` control, so the row's own intent is sent), Enter sends `onOpen`.
-// Options are <Row option={{ id: optionId(key), selected }}> inside <Rows group>.
-export function useOptionIds() {
-	const list = useId();
-	return (key: string) => `${list}${key}`;
-}
-
+// A list whose selection the engine holds. It is one tab stop: only the selected row's control (its
+// `[data-select]` button, or the first row's while none is selected) is tabbable, see `tabStop`.
+// Down and Up send Intent.select_next and select_previous; Enter sends `onOpen`. When the engine's
+// new selection arrives with focus in the list, focus follows it. Rows keep their hover actions
+// out of the tab order: the reading pane's toolbar has the same.
 export function SelectList({
-	label,
 	active,
 	onOpen,
-	className,
 	children,
 }: {
-	label: string;
-	// The selected option's element id, if any.
+	// The selected row's key, if any.
 	active: string | undefined;
 	onOpen?: () => void;
-	className?: string;
 	children: ReactNode;
 }) {
-	// The selection may come from the keyboard; keep the selected row in view.
+	const send = useSend();
+	const list = useRef<HTMLDivElement>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: runs when the selection changes
 	useEffect(() => {
-		if (active)
-			document.getElementById(active)?.scrollIntoView({ block: "nearest" });
+		const current = list.current?.querySelector<HTMLElement>(
+			'[data-select][aria-current="true"]',
+		);
+		current?.scrollIntoView({ block: "nearest" });
+		if (list.current?.contains(document.activeElement)) current?.focus();
 	}, [active]);
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: keys bubble up from the rows' buttons; the wrapper itself takes no focus
 		<div
-			role="listbox"
-			tabIndex={0}
-			aria-label={label}
-			aria-activedescendant={active}
-			className={className}
-			onKeyDown={(event) => key(event, onOpen)}
+			ref={list}
+			onKeyDown={(event) => {
+				switch (event.key) {
+					case "ArrowDown":
+						event.preventDefault();
+						return send({ case: "selectNext", value: {} });
+					case "ArrowUp":
+						event.preventDefault();
+						return send({ case: "selectPrevious", value: {} });
+					case "Enter":
+						if (!onOpen) return;
+						event.preventDefault();
+						return onOpen();
+				}
+			}}
 		>
 			{children}
 		</div>
 	);
 }
 
-function key(event: KeyboardEvent<HTMLDivElement>, onOpen?: () => void) {
-	const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-	if (step) {
-		event.preventDefault();
-		const options = [
-			...event.currentTarget.querySelectorAll<HTMLElement>("[role=option]"),
-		];
-		const at = options.findIndex((option) => option.ariaSelected === "true");
-		const next = options[at < 0 ? 0 : at + step];
-		next?.querySelector<HTMLElement>("[data-select]")?.click();
-	} else if (event.key === "Enter" && onOpen) {
-		event.preventDefault();
-		onOpen();
-	}
-}
+// Whether a row's control is the list's one tab stop.
+export const tabStop = (
+	selected: boolean,
+	index: number,
+	anySelected: boolean,
+) => selected || (!anySelected && index === 0);

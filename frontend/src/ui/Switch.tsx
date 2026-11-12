@@ -1,6 +1,6 @@
 import { m } from "motion/react";
 import { cx } from "./cx";
-import { move } from "./motion";
+import { useTiming } from "./motion";
 
 // The design's `.switch`. The knob moves ease-in-out and stretches 12% on the way; Motion runs it
 // so the knob only moves when `on` changes, never when the switch first appears.
@@ -15,8 +15,9 @@ export function Switch({
 }: {
 	on: boolean;
 	label: string;
-	onToggle?: () => void;
+	onToggle: () => void;
 }) {
+	const { move } = useTiming();
 	return (
 		<button
 			type="button"

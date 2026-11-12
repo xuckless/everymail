@@ -4,9 +4,11 @@ package ui.v1;
 
 import "ui/v1/agent_builder.proto";
 import "ui/v1/agents.proto";
+import "ui/v1/approvals.proto";
 import "ui/v1/briefing.proto";
 import "ui/v1/calendar.proto";
 import "ui/v1/common.proto";
+import "ui/v1/compose.proto";
 import "ui/v1/connect.proto";
 import "ui/v1/inbox.proto";
 import "ui/v1/quarantine.proto";
@@ -35,9 +37,27 @@ message ShellView {
     CalendarView calendar = 12;
     QuarantineView quarantine = 13;
     BriefingView briefing = 14;
+    ApprovalsView approvals = 17;
   }
   // Set with Intent.set_density; Comfortable until the user picks another.
   Density density = 15;
+  // Set with Intent.set_sidebar; expanded until the user collapses it.
+  Sidebar sidebar = 16;
+  // Outcomes of the user's latest actions; usually none.
+  repeated ActionOutcome outcomes = 18;
+  Notice notice = 19;
+  Composer composer = 20;
+  // How the web Frontend puts `path` in the address bar.
+  HistoryStep history = 21;
+}
+
+// A path the user navigated to is a new history entry; the same path, a path the address bar
+// already shows (Intent.open_path), or one the data moved the navigation to replaces the current
+// entry.
+enum HistoryStep {
+  HISTORY_STEP_UNSPECIFIED = 0;
+  HISTORY_STEP_PUSH = 1;
+  HISTORY_STEP_REPLACE = 2;
 }
 
 // An unset oneof is a decode error, never a state.
@@ -64,12 +84,12 @@ message BackendUnreachable {}
 
 message DatabaseUnavailable {}
 
-// The desktop sidebar and rail, the phone's bottom bar and mailbox menu.
+// Everything the desktop sidebar shows on every screen, the phone's tab bar and mailbox menu.
 message Navigation {
   reserved 1;
   // The signed-in user's name: "Ali"
   string user_name = 11;
-  // The rail and bottom-bar destination of the current screen.
+  // The phone tab bar's destination of the current screen; the sidebar marks Settings with it.
   Destination destination = 2;
   // Intent.open_inbox with InboxScope.all.
   NavMailbox all_inboxes = 3;
@@ -80,11 +100,35 @@ message Navigation {
   // Intent.open_briefing.
   NavBriefing briefing = 6;
   repeated NavFolder folders = 7;
-  // Intent.select_agent.
+  // The agent list: Intent.select_agent, and Intent.open_agent_builder on the "+" by the label.
   repeated NavAgent system_agents = 8;
   repeated NavAgent user_agents = 9;
-  // An agent waits for the user: the dot on the phone's Agents tab.
-  bool agents_waiting = 10;
+  // Right under Briefing: Intent.open_approvals. Its waiting count is also the dot on the phone's
+  // Agents tab.
+  NavApprovals approvals = 12;
+  reserved 10;
+  reserved "agents_waiting";
+  // Saved drafts, newest first; none usually.
+  repeated NavDraft drafts = 13;
+  // Intent.open_inbox with InboxScope.folder_id set to `folder_id`.
+  NavTrash trash = 14;
+  // The new folder field under the Folders label (DisclosureTarget.form FORM_NEW_FOLDER). It closes
+  // when the folder is created.
+  Disclosure new_folder = 15;
+  // Changes when the field's text is cleared.
+  uint32 new_folder_revision = 16;
+  // The new mail shortcut as this device writes it: "⌘N", "Ctrl+N".
+  string new_mail_shortcut = 17;
+}
+
+// Deleted mail, kept until the user empties it.
+message NavTrash {
+  string folder_id = 1;
+  // "Trash"
+  string name = 2;
+  // "3"; empty when empty.
+  string count = 3;
+  bool current = 4;
 }
 
 enum Destination {
@@ -95,7 +139,7 @@ enum Destination {
   DESTINATION_INBOX = 2;
   DESTINATION_CALENDAR = 3;
   DESTINATION_BRIEFING = 4;
-  // Agents and the agent builder.
+  // Agents, the agent builder and Approvals.
   DESTINATION_AGENTS = 5;
   DESTINATION_SETTINGS = 6;
 }
@@ -160,10 +204,13 @@ message NavAgent {
   AgentStatus status = 3;
   // The waiting count or the next run: "2", "18:00"
   string note = 4;
+  // Its page is shown.
+  bool current = 5;
 }
 
 // Frontend to engine.
 message Intent {
+  reserved 26;
   oneof kind {
     RetryConnection retry_connection = 1;
     SetTheme set_theme = 2;
@@ -190,11 +237,106 @@ message Intent {
     SelectQuarantined select_quarantined = 23;
     OpenBriefing open_briefing = 24;
     SelectEdition select_edition = 25;
-    SelectAgentsPane select_agents_pane = 26;
+    OpenApprovals open_approvals = 37;
     SelectBuilderStep select_builder_step = 27;
     SelectDay select_day = 28;
     SelectAgentDetailPane select_agent_detail_pane = 29;
     SetDensity set_density = 30;
+    SetSidebar set_sidebar = 31;
+    SelectCalendarView select_calendar_view = 32;
+    ShowPreviousPeriod show_previous_period = 33;
+    ShowNextPeriod show_next_period = 34;
+    ShowToday show_today = 35;
+    SelectMonth select_month = 36;
+    SignOut sign_out = 38;
+    DeleteUserAccount delete_user_account = 39;
+    ConnectImap connect_imap = 40;
+    DisconnectAccount disconnect_account = 41;
+    ReconnectAccount reconnect_account = 42;
+    SetSignature set_signature = 43;
+    ArchiveThread archive_thread = 44;
+    TrashThread trash_thread = 45;
+    MoveThread move_thread = 46;
+    SetStarred set_starred = 47;
+    SetUnread set_unread = 48;
+    SnoozeThread snooze_thread = 49;
+    CreateFolder create_folder = 50;
+    SearchMail search_mail = 51;
+    ClearSearch clear_search = 52;
+    Undo undo = 53;
+    DismissNotice dismiss_notice = 54;
+    OpenComposer open_composer = 55;
+    UpdateDraft update_draft = 56;
+    SetDraftAccount set_draft_account = 57;
+    AttachFile attach_file = 58;
+    RemoveAttachment remove_attachment = 59;
+    SendDraft send_draft = 60;
+    SendDraftLater send_draft_later = 61;
+    DiscardDraft discard_draft = 62;
+    CloseComposer close_composer = 63;
+    OpenDraft open_draft = 64;
+    SelectComposeModel select_compose_model = 65;
+    SelectTone select_tone = 66;
+    WriteReply write_reply = 67;
+    UseReply use_reply = 68;
+    SendReply send_reply = 69;
+    ClearReply clear_reply = 70;
+    AnswerInvitation answer_invitation = 71;
+    NewEvent new_event = 72;
+    SaveEvent save_event = 73;
+    DeleteEvent delete_event = 74;
+    SetCalendarShown set_calendar_shown = 75;
+    RunAgent run_agent = 76;
+    SetAgentActive set_agent_active = 77;
+    SetAgentInstructions set_agent_instructions = 78;
+    AddAgentTime add_agent_time = 79;
+    RemoveAgentTime remove_agent_time = 80;
+    SetAgentModel set_agent_model = 81;
+    SetAgentPermission set_agent_permission = 82;
+    SetAgentAccount set_agent_account = 83;
+    AddNewsTopic add_news_topic = 84;
+    RemoveNewsTopic remove_news_topic = 85;
+    RemoveAgent remove_agent = 86;
+    UpdateBuilder update_builder = 87;
+    PickIdea pick_idea = 88;
+    SetBuilderTrigger set_builder_trigger = 89;
+    SetTriggerFilter set_trigger_filter = 90;
+    SetBuilderSchedule set_builder_schedule = 91;
+    SetBuilderInterval set_builder_interval = 92;
+    SetBuilderAccount set_builder_account = 93;
+    SetBuilderPermission set_builder_permission = 94;
+    SetAskBeforeNewRecipient set_ask_before_new_recipient = 95;
+    StartDryRun start_dry_run = 96;
+    CreateAgent create_agent = 97;
+    DiscardBuilder discard_builder = 98;
+    SendChatMessage send_chat_message = 99;
+    ClearConversation clear_conversation = 100;
+    ApproveItem approve_item = 101;
+    DeclineItem decline_item = 102;
+    EditApproval edit_approval = 103;
+    ReleaseQuarantined release_quarantined = 104;
+    DeleteQuarantined delete_quarantined = 105;
+    AddRule add_rule = 106;
+    SetRuleEnabled set_rule_enabled = 107;
+    RemoveRule remove_rule = 108;
+    UnblockSender unblock_sender = 109;
+    SetModelKey set_model_key = 110;
+    RemoveModelKey remove_model_key = 111;
+    SetTaskModel set_task_model = 112;
+    SetBudget set_budget = 113;
+    SetNotifyWhenWaiting set_notify_when_waiting = 114;
+    SetAgentsPaused set_agents_paused = 115;
+    SetDefaultPermission set_default_permission = 116;
+    ExportData export_data = 117;
+    ResetLocalData reset_local_data = 118;
+    CancelSend cancel_send = 119;
+    CancelSignIn cancel_sign_in = 120;
+    CancelDryRun cancel_dry_run = 121;
+    CancelExport cancel_export = 122;
+    SelectNext select_next = 123;
+    SelectPrevious select_previous = 124;
+    OpenDisclosure open_disclosure = 125;
+    CloseDisclosure close_disclosure = 126;
   }
 }
 
@@ -205,13 +347,14 @@ message SetTheme {
 }
 
 // Navigate to a web path, such as the address bar's on load or on the browser's back and forward.
-// An unknown path lands on the inbox.
+// A path that names nothing lands on the inbox, or the agents list for an unknown agent, with an
+// info notice saying so.
 message OpenPath {
   string path = 1;
 }
 
-// The back affordance: thread to inbox, agent builder to agents, an agent's chat to its activity,
-// Quarantine to inbox, and a connect step to the provider list. Elsewhere it changes nothing.
+// The back affordance: thread to inbox, Quarantine to inbox, an agent's page, Approvals and the agent
+// builder to the agents list, and a connect step to the provider list. Elsewhere it changes nothing.
 message Back {}
 
 // Sign in, then connect accounts.
@@ -226,8 +369,8 @@ message PickMailProvider {
   MailProvider provider = 1;
 }
 
-// "I've signed in" or the IMAP form's Connect. In this skeleton it shows the syncing step and adds
-// nothing; connecting for real is a later roadmap task.
+// "I've signed in" on a provider's sign-in step: the account connects and its first sync starts.
+// The IMAP form connects with Intent.connect_imap.
 message ConfirmConnect {}
 
 // Opens a mailbox or folder, on its For you tab.
@@ -267,10 +410,10 @@ message CollapseMessage {
   string message_id = 1;
 }
 
+// The agents list (the phone's Agents tab).
 message OpenAgents {}
 
-// Shows this agent on the agents screen, opening it from anywhere, on the agent's default pane
-// (AgentChat).
+// Opens this agent's page from anywhere, on its default pane (AgentPage.panes).
 message SelectAgent {
   string agent_id = 1;
 }
@@ -281,6 +424,7 @@ message OpenSettings {
   SettingsSection section = 1;
 }
 
+// The calendar as it was left: the same view and selected day.
 message OpenCalendar {}
 
 // Shows this event on the calendar, opening it from anywhere (a chat answer's event reference),
@@ -293,6 +437,7 @@ message CloseEvent {}
 
 message OpenQuarantine {}
 
+// Shows this quarantined mail on Quarantine, opening it from anywhere (a reference).
 message SelectQuarantined {
   string quarantined_id = 1;
 }
@@ -303,26 +448,539 @@ message SelectEdition {
   string edition_id = 1;
 }
 
-// The pane a narrow agents screen shows.
-message SelectAgentsPane {
-  AgentsPane pane = 1;
-}
+// The approval queue, from anywhere.
+message OpenApprovals {}
 
 // The step a narrow agent builder shows: its Continue, Back and step indicator.
 message SelectBuilderStep {
   BuilderStep step = 1;
 }
 
-// The calendar day a narrow layout shows, by CalendarDay id.
+// Selects a day by its date ("2026-11-12"). In the month and year views it opens the week view on
+// that day.
 message SelectDay {
   string day_id = 1;
 }
 
-// Activity or chat of the selected agent. Chat is ignored for an agent that has no chat pane.
+// A pane of the agent page shown. A pane the agent does not have changes nothing.
 message SelectAgentDetailPane {
   AgentDetailPane pane = 1;
 }
 
 message SetDensity {
   Density density = 1;
+}
+
+message SetSidebar {
+  Sidebar sidebar = 1;
+}
+
+// Week, month or year, around the selected day.
+message SelectCalendarView {
+  CalendarMode mode = 1;
+}
+
+// The week, month or year before the one shown; the selected day moves by as much.
+message ShowPreviousPeriod {}
+
+message ShowNextPeriod {}
+
+// Selects today, in the view shown.
+message ShowToday {}
+
+// A month of the year view: opens the month view on its first day.
+message SelectMonth {
+  // "2026-12"
+  string month_id = 1;
+}
+
+// A new mail.
+message NewMail {}
+
+// Back to sign-in. The local data stays until another user signs in.
+message SignOut {}
+
+// Deletes the user's EveryMail account and everything in it, then shows sign-in. The Frontend
+// confirms first.
+message DeleteUserAccount {}
+
+// The IMAP form's Connect. The password goes to the Backend and is never stored on the device.
+message ConnectImap {
+  MailProvider provider = 1;
+  string address = 2;
+  string password = 3;
+  // Other IMAP only.
+  string server = 4;
+  string port = 5;
+}
+
+// Removes the account and its mail from EveryMail. The Frontend confirms first.
+message DisconnectAccount {
+  string account_id = 1;
+}
+
+// Signs an account whose sign-in expired in again.
+message ReconnectAccount {
+  string account_id = 1;
+}
+
+message SetSignature {
+  string account_id = 1;
+  oneof signature {
+    string text = 2;
+    NoSignature none = 3;
+  }
+}
+
+// Out of the inbox; undoable while the notice shows.
+message ArchiveThread {
+  string thread_id = 1;
+}
+
+// To the trash; undoable while the notice shows.
+message TrashThread {
+  string thread_id = 1;
+}
+
+// To the inbox, or to a folder the user made, out of the inbox.
+message MoveThread {
+  string thread_id = 1;
+  oneof to {
+    MoveToInbox inbox = 2;
+    string folder_id = 3;
+  }
+}
+
+message SetStarred {
+  string message_id = 1;
+  bool starred = 2;
+}
+
+// Opening or previewing a thread marks it read.
+message SetUnread {
+  string thread_id = 1;
+  bool unread = 2;
+}
+
+// Out of the inbox until the preset's time, then back on top, unread.
+message SnoozeThread {
+  string thread_id = 1;
+  SnoozePreset preset = 2;
+}
+
+// The sidebar's "+" by Folders. A failure is an outcome on FORM_NEW_FOLDER.
+message CreateFolder {
+  string name = 1;
+}
+
+// Searches the listing shown (or the one a search runs over) for every word typed, as prefixes.
+message SearchMail {
+  string query = 1;
+}
+
+// Shows the listing the search ran over again.
+message ClearSearch {}
+
+// Takes back what the undo notice names.
+message Undo {}
+
+message DismissNotice {}
+
+// Opens the composer on a new draft, or on the saved draft for the same message.
+message OpenComposer {
+  oneof kind {
+    NewMail new_mail = 1;
+    string reply_to_message_id = 2;
+    string reply_all_to_message_id = 3;
+    string forward_message_id = 4;
+  }
+}
+
+// The composer's text, on a debounce.
+message UpdateDraft {
+  string draft_id = 1;
+  string to = 2;
+  string subject = 3;
+  string body = 4;
+}
+
+message SetDraftAccount {
+  string draft_id = 1;
+  string account_id = 2;
+}
+
+// A file the Frontend's picker chose: only its name and size are kept.
+message AttachFile {
+  string draft_id = 1;
+  string name = 2;
+  uint64 size_bytes = 3;
+}
+
+message RemoveAttachment {
+  reserved 2;
+  reserved "position";
+  string draft_id = 1;
+  // Attachment.id
+  string attachment_id = 3;
+}
+
+// Sends after the 10-second undo window. A failure is an outcome on the draft.
+message SendDraft {
+  string draft_id = 1;
+}
+
+message SendDraftLater {
+  string draft_id = 1;
+  string day_id = 2;
+  uint32 minute = 3;
+}
+
+message DiscardDraft {
+  string draft_id = 1;
+}
+
+// Keeps the draft.
+message CloseComposer {}
+
+message OpenDraft {
+  string draft_id = 1;
+}
+
+message SelectComposeModel {
+  string model_name = 1;
+}
+
+message SelectTone {
+  string tone = 1;
+}
+
+// Reply with AI: writes a reply following the instruction (or a quick reply's text).
+message WriteReply {
+  string thread_id = 1;
+  string instruction = 2;
+}
+
+// Opens the written reply in the composer.
+message UseReply {
+  string thread_id = 1;
+}
+
+// Sends the written reply, with the undo window.
+message SendReply {
+  string thread_id = 1;
+}
+
+message ClearReply {
+  string thread_id = 1;
+}
+
+// Answers, or changes the answer.
+message AnswerInvitation {
+  string event_id = 1;
+  InvitationReply reply = 2;
+}
+
+// Opens an unsaved event on the selected day in the drawer (CalendarView.selected.unsaved). Only
+// Intent.save_event keeps it; Intent.close_event or selecting another event drops it.
+message NewEvent {}
+
+// The drawer's Save. A failure is an outcome on the event, or on FORM_NEW_EVENT for the unsaved
+// one.
+message SaveEvent {
+  oneof event {
+    string event_id = 1;
+    UnsavedEvent unsaved = 9;
+  }
+  string title = 2;
+  string day_id = 3;
+  uint32 start_minute = 4;
+  uint32 end_minute = 5;
+  string calendar_id = 6;
+  repeated string guests = 7;
+  // The place; unset keeps the one saved, empty clears it.
+  optional string place = 8;
+}
+
+// The unsaved new event.
+message UnsavedEvent {}
+
+message DeleteEvent {
+  string event_id = 1;
+}
+
+message SetCalendarShown {
+  string calendar_id = 1;
+  bool shown = 2;
+}
+
+// Run now. The Backend decides: a refusal (paused, deactivated, already running, at a cap, out of
+// token budget, no key) is a failed outcome on the agent.
+message RunAgent {
+  string agent_id = 1;
+}
+
+message SetAgentActive {
+  string agent_id = 1;
+  bool active = 2;
+}
+
+// A user agent's instructions, or the user's own for a system agent; on a debounce.
+message SetAgentInstructions {
+  string agent_id = 1;
+  string text = 2;
+}
+
+message AddAgentTime {
+  string agent_id = 1;
+  uint32 minute = 2;
+}
+
+message RemoveAgentTime {
+  string agent_id = 1;
+  uint32 minute = 2;
+}
+
+message SetAgentModel {
+  string agent_id = 1;
+  string model_name = 2;
+}
+
+// Auto beyond what the permission's levels offer is an outcome failure on the agent.
+message SetAgentPermission {
+  reserved 2;
+  reserved "action";
+  string agent_id = 1;
+  // Permission.id
+  string permission_id = 4;
+  PermissionLevel level = 3;
+}
+
+message SetAgentAccount {
+  string agent_id = 1;
+  string account_id = 2;
+  bool included = 3;
+}
+
+// At most 10. A failure is an outcome on FORM_NEWS_TOPIC.
+message AddNewsTopic {
+  string topic = 1;
+}
+
+message RemoveNewsTopic {
+  string topic = 1;
+}
+
+// Deletes an agent the user made. The Frontend confirms first.
+message RemoveAgent {
+  string agent_id = 1;
+}
+
+// The builder's text, on a debounce.
+message UpdateBuilder {
+  string name = 1;
+  string instructions = 2;
+}
+
+message PickIdea {
+  string idea = 1;
+}
+
+message SetBuilderTrigger {
+  string trigger_id = 1;
+  bool chosen = 2;
+}
+
+message SetTriggerFilter {
+  reserved 2, 3;
+  reserved "key", "value";
+  string trigger_id = 1;
+  // TriggerFilter.id
+  string filter_id = 4;
+  // FilterChoice.id
+  string choice_id = 5;
+}
+
+// One of BuilderSchedule.choices, by id.
+message SetBuilderSchedule {
+  reserved 1;
+  reserved "choice";
+  string choice_id = 2;
+}
+
+// The custom interval's field as typed, in minutes: "45". Text that is not a whole number of
+// minutes, or an interval the Backend does not allow, is an outcome failure on
+// FORM_BUILDER_INTERVAL.
+message SetBuilderInterval {
+  reserved 1;
+  reserved "seconds";
+  string minutes = 2;
+}
+
+message SetBuilderAccount {
+  string account_id = 1;
+  bool can_see = 2;
+}
+
+message SetBuilderPermission {
+  reserved 1;
+  reserved "action";
+  // Permission.id
+  string permission_id = 3;
+  PermissionLevel level = 2;
+}
+
+message SetAskBeforeNewRecipient {
+  bool ask = 1;
+}
+
+message StartDryRun {}
+
+// Creates the agent and opens its page.
+message CreateAgent {}
+
+// Starts the builder over.
+message DiscardBuilder {}
+
+// Refused while a turn is running; a turn waiting for an approval does not hold the conversation.
+message SendChatMessage {
+  string agent_id = 1;
+  string text = 2;
+}
+
+// Refused while a turn is running.
+message ClearConversation {
+  string agent_id = 1;
+}
+
+// Approve and send, or Unsubscribe.
+message ApproveItem {
+  string approval_id = 1;
+}
+
+// Decline, or Keep.
+message DeclineItem {
+  string approval_id = 1;
+}
+
+// Opens the drafted reply in the composer; sending it approves the item.
+message EditApproval {
+  string approval_id = 1;
+}
+
+// Not spam: back to the inbox, and the sender off the block list.
+message ReleaseQuarantined {
+  string quarantined_id = 1;
+}
+
+// Deleted now rather than when its copy is dropped.
+message DeleteQuarantined {
+  string quarantined_id = 1;
+}
+
+// A failure is an outcome on FORM_NEW_RULE. A rule this build cannot apply is still added; the
+// done outcome and the rule's `reading` say so.
+message AddRule {
+  reserved 1, 2;
+  reserved "when", "then";
+  RuleCondition condition = 3;
+  // One or more.
+  repeated RuleAction actions = 4;
+}
+
+message SetRuleEnabled {
+  string rule_id = 1;
+  bool enabled = 2;
+}
+
+message RemoveRule {
+  string rule_id = 1;
+}
+
+message UnblockSender {
+  string address = 1;
+}
+
+// The key goes to the Backend and is never kept on the device.
+message SetModelKey {
+  ModelProvider provider = 1;
+  string key = 2;
+}
+
+message RemoveModelKey {
+  ModelProvider provider = 1;
+}
+
+message SetTaskModel {
+  reserved 1;
+  reserved "task";
+  // TaskModel.id
+  string task_id = 3;
+  string model_name = 2;
+}
+
+// Text that is not a number of tokens ("500,000" and "500000" are), or a budget the Backend does
+// not allow, is an outcome failure on FORM_BUDGET.
+message SetBudget {
+  reserved 2;
+  reserved "daily_tokens";
+  oneof budget {
+    NoBudget unlimited = 1;
+    // The field as typed.
+    string daily = 3;
+  }
+}
+
+message SetNotifyWhenWaiting {
+  bool notify = 1;
+}
+
+// Pausing lets each running run finish its current step, then holds it paused; resuming lets
+// them go on.
+message SetAgentsPaused {
+  bool paused = 1;
+}
+
+message SetDefaultPermission {
+  reserved 1;
+  reserved "action";
+  // Permission.id
+  string permission_id = 3;
+  PermissionLevel level = 2;
+}
+
+message ExportData {}
+
+// Drops the local data and syncs it again from the Backend, keeping the session and the device's
+// preferences.
+message ResetLocalData {}
+
+// Takes back a send the Backend still holds (undoable or scheduled), whichever notice shows: the
+// draft opens again in the composer.
+message CancelSend {
+  string draft_id = 1;
+}
+
+// Stops waiting for the provider's sign-in.
+message CancelSignIn {}
+
+// Stops the builder's dry run.
+message CancelDryRun {}
+
+// Stops preparing the export.
+message CancelExport {}
+
+// Selects the row after the selected one in the list the screen shows (the inbox's rows,
+// Quarantine's), or the first; at the end it changes nothing. Elsewhere it changes nothing.
+message SelectNext {}
+
+// The row before the selected one, or the first.
+message SelectPrevious {}
+
+// A target that names nothing shown changes nothing.
+message OpenDisclosure {
+  DisclosureTarget target = 1;
+}
+
+message CloseDisclosure {
+  DisclosureTarget target = 1;
 }

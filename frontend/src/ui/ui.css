@@ -19,6 +19,17 @@
 	left: 0;
 	transform-origin: top left;
 }
+.pop-above {
+	top: auto;
+	bottom: calc(100% + 6px);
+}
+.pop-start.pop-above,
+.pop-stretch.pop-above {
+	transform-origin: bottom left;
+}
+.pop-end.pop-above {
+	transform-origin: bottom right;
+}
 .pop-stretch {
 	right: 0;
 }
@@ -102,7 +113,7 @@
 	gap: 2px;
 }
 .invitation-title {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	font-weight: 500;
 }
 .invitation-answer {
@@ -268,22 +279,14 @@
 .read-pane {
 	flex: 1;
 }
-.read-bar {
-	height: 52px;
-	flex: none;
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
-	padding: 0 10px 0 22px;
-}
 .read-scroll {
 	flex: 1;
 	min-height: 0;
 }
 .read-stack {
-	max-width: 720px;
+	max-width: 880px;
 	margin: 0 auto;
-	padding: var(--space-2) 40px 40px;
+	padding: var(--space-6) var(--space-6) var(--space-8);
 }
 .mail-header {
 	display: flex;
@@ -301,7 +304,12 @@
 .read-article {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: var(--space-4);
+}
+.thread-head {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
 /* A message box with its controls under it (Composer.tsx). */
@@ -323,7 +331,237 @@
 	margin-top: var(--space-1);
 }
 
-/* A listbox's focus ring sits inside it, where the scroll container does not clip it. */
-[role="listbox"]:focus-visible {
-	outline-offset: -2px;
+/* References (Reference.tsx): plain links, one per line. */
+.references {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+}
+.reference {
+	text-align: left;
+}
+
+/* A one-panel page (Page.tsx). Spacing scale: 24px inside a panel, 32px between sections, 12px
+   between items of a section, 16px inside a card. */
+.page {
+	flex: 1;
+	min-height: 0;
+}
+.page-head {
+	flex: none;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	padding: var(--space-6) var(--space-6) var(--space-4);
+}
+.page-title {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-width: 0;
+}
+.page-name {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.page-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.page-body {
+	flex: 1;
+	min-height: 0;
+	padding: var(--space-2) var(--space-6) var(--space-8);
+}
+.page-fill {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+/* phone: full screen under the status corner */
+.page-phone {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+/* a page with several actions gives the title its own line and wraps the actions under it */
+.page-phone.page-wrap .page-title {
+	flex-wrap: wrap;
+	row-gap: var(--space-2);
+}
+.page-phone.page-wrap .page-name {
+	flex-basis: calc(100% - 120px);
+}
+.page-phone.page-wrap .page-actions {
+	width: 100%;
+}
+.page-phone .page-body {
+	padding: var(--space-1) var(--space-4) var(--space-6);
+}
+
+/* Pane sections (agent panes, the agent list): 32px between sections, 12px under a label. */
+.pane-sections {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-8);
+}
+.pane-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+.pane-section > h2 {
+	margin: 0;
+}
+.tnum {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Stats (Stats.tsx): figure tiles in a row. */
+.stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: var(--space-3);
+	max-width: 720px;
+}
+.stat {
+	padding: 14px var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.stat-value {
+	font-size: 22px;
+	font-weight: 600;
+}
+
+/* The thread toolbar and message card (MailCard.tsx). The card's border and hairlines are the
+   owner's: each message reads as one card. */
+/* the hairline keeps the fixed toolbar apart from the mail scrolling under it */
+.mail-toolbar {
+	height: 52px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 0 var(--space-3);
+	border-bottom: 1px solid var(--line);
+}
+.starred {
+	color: var(--warn);
+}
+.mail-card {
+	border: 1px solid var(--line-2);
+	border-radius: var(--radius-xl);
+	background: var(--surface);
+}
+.card-head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 56px;
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+}
+.card-toggle {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-self: stretch;
+	align-items: center;
+	text-align: left;
+	border-radius: var(--radius-md);
+}
+.card-who {
+	min-width: 0;
+}
+.card-time {
+	white-space: nowrap;
+	padding: 0 var(--space-1);
+}
+.card-actions {
+	display: flex;
+	align-items: center;
+}
+.card-open {
+	display: flex;
+	flex-direction: column;
+}
+.card-subject {
+	margin: 0;
+	padding: var(--space-3) var(--space-4);
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+	font-size: var(--fs-body);
+	font-weight: 600;
+}
+.card-body {
+	padding: var(--space-4);
+}
+.attachments {
+	margin: 0;
+	padding: 0 var(--space-4) var(--space-4);
+	list-style: none;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: var(--space-2);
+}
+.attachment {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-width: 0;
+	padding: 10px var(--space-3);
+	border-radius: var(--radius-lg);
+	background: var(--raised);
+}
+.attachment > svg {
+	color: var(--muted);
+}
+.card-open > .invitation {
+	margin: 0 var(--space-4) var(--space-4);
+}
+
+/* Outcomes (Outcome.tsx): the done text in the success colour, the failure reason in the error colour. */
+
+/* A confirmation (Confirm.tsx): the question over Cancel and the action. */
+.confirm {
+	width: 280px;
+	padding: var(--space-3);
+}
+.confirm-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+.confirm-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-2);
+}
+.btn.danger {
+	background: var(--bad);
+	color: var(--on-bad);
+}
+
+/* A button label that crossfades between states (Run now, Running) inside an Overlap. */
+.btn-label {
+	display: inline-grid;
+}
+
+/* A queue with nothing in it (AllClear.tsx). */
+.all-clear {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 96px var(--space-6);
+	text-align: center;
+}
+.mail-place {
+	padding-left: var(--space-3);
 }

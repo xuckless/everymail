@@ -1,5 +1,5 @@
 import { unset } from "../engine";
-import type { AccountStatus, AgentStatus } from "../gen/ui/v1/common_pb";
+import type { AccountState, AgentStatus } from "../gen/ui/v1/common_pb";
 import { cx } from "./cx";
 
 // The status dot of design/components.css. `run` breathes.
@@ -39,16 +39,18 @@ export function agentTone(status: AgentStatus | undefined): Tone {
 }
 
 // An account's dot and the engine's label for its state.
-export function accountStatus(status: AccountStatus | undefined): {
+export function accountStatus(account: AccountState | undefined): {
 	tone: Tone;
 	label: string;
 } {
-	switch (status?.state.case) {
+	switch (account?.state.case) {
 		case "synced":
-			return { tone: "done", label: status.state.value.label };
+			return { tone: "done", label: account.state.value.label };
 		case "signInExpired":
-			return { tone: "err", label: status.state.value.label };
+			return { tone: "err", label: account.state.value.label };
+		case "syncing":
+			return { tone: "run", label: account.state.value.label };
 		case undefined:
-			return unset("AccountStatus");
+			return unset("AccountState");
 	}
 }

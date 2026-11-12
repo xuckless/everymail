@@ -21,7 +21,7 @@
 	font-size: 28px;
 }
 .connect-lede {
-	font-size: 15px;
+	font-size: var(--fs-reading);
 	max-width: 460px;
 }
 .connect-group {

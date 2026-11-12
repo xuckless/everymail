@@ -17,6 +17,15 @@ Other parts: [TODO-backend.md](TODO-backend.md) (Backend), [TODO-rust-core.md](T
 - [ ] Bring the Linux baseline down before adding screens: the release build with only the shell screen measured 333 MB PSS on Fedora (WebKitGTK 2.54, Wayland), and 237 MB with `WEBKIT_DISABLE_DMABUF_RENDERER=1`
       Find out what the DMABUF renderer costs in motion quality before turning it off
 
+## Working build on the demo Backend
+
+- [x] Every control wired to its intent, with outcomes, the undo notice, confirm popovers and the composer; checked end to end in a browser at desktop and phone width
+- [x] Owner's redesign: one collapsible sidebar with the logo and wordmark, no rail, Approvals as its own screen, agent pages with Results, Activity, Chat and Settings, message cards with attachments and actions, week, month and year calendar views
+- [x] Independent audit against AGENTS.md, and its findings fixed: no lookups by label or position, no parsing of engine text, disclosure and field resets owned by the engine, duplication removed, the state lint's bypasses closed
+- [ ] An archived row travelling on an arc to Archive: needs a shared layout with a sidebar row that the list and phone layouts do not show
+- [ ] Look at the app in the Tauri window: this build was verified on web only
+- [ ] The roadmap items below were written before this build; many are now done against the demo Backend and need a pass to check them off
+
 ## Motion foundations
 
 - [x] Add Motion for shared layout, exits and gestures, importing only the parts used; presses, fades and dots stay plain CSS

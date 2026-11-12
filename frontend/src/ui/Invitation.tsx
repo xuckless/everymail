@@ -1,11 +1,14 @@
-import { unset } from "../engine";
-import type {
-	InvitationAnswer,
-	Invitation as InvitationView,
+import { unset, useSend } from "../engine";
+import {
+	type InvitationAnswer,
+	InvitationReply,
+	type Invitation as InvitationView,
 } from "../gen/ui/v1/common_pb";
 import { Button } from "./Button";
 import { cx } from "./cx";
 import { Dot, type Tone } from "./Dot";
+import { useDisclosure } from "./disclosure";
+import { pulseOn, useOutcome } from "./Outcome";
 import { Overlap } from "./Overlap";
 import { Segmented } from "./Segmented";
 
@@ -13,13 +16,35 @@ import { Segmented } from "./Segmented";
 //   thread: in the message that carries it, the answer as a segmented control;
 //   card: the calendar's sidebar, Accept, Maybe and Decline until answered, then Change;
 //   sheet: the phone's sheet, three large buttons with the chosen one filled.
-// Accept, Maybe, Decline and Change have no intent yet and are drawn without one.
+// Every answer is Intent.answer_invitation; the engine's next view carries it. What the card offers
+// is the engine's (Invitation.prompt): the answers, or Change, which asks for them again.
 type Answer = Exclude<InvitationAnswer["state"]["case"], undefined>;
 
-const answers: { answer: Answer; label: string }[] = [
-	{ answer: "accepted", label: "Accept" },
-	{ answer: "tentative", label: "Maybe" },
-	{ answer: "declined", label: "Decline" },
+// The three answers, with the weight each has on the card.
+const answers: {
+	answer: Answer;
+	reply: InvitationReply;
+	label: string;
+	card: "primary" | "soft" | "ghost";
+}[] = [
+	{
+		answer: "accepted",
+		reply: InvitationReply.ACCEPT,
+		label: "Accept",
+		card: "primary",
+	},
+	{
+		answer: "tentative",
+		reply: InvitationReply.MAYBE,
+		label: "Maybe",
+		card: "soft",
+	},
+	{
+		answer: "declined",
+		reply: InvitationReply.DECLINE,
+		label: "Decline",
+		card: "ghost",
+	},
 ];
 
 export function Invitation({
@@ -30,6 +55,15 @@ export function Invitation({
 	form: "thread" | "card" | "sheet";
 }) {
 	const answer = invitation.answer?.state.case ?? unset("InvitationAnswer");
+	const send = useSend();
+	const change = useDisclosure({ case: "eventId", value: invitation.eventId });
+	const outcome = useOutcome({ case: "eventId", value: invitation.eventId });
+	const reply = (each: InvitationReply) =>
+		send({
+			case: "answerInvitation",
+			value: { eventId: invitation.eventId, reply: each },
+		});
+	const prompt = invitation.prompt.case ?? unset("Invitation.prompt");
 	switch (form) {
 		case "thread":
 			return (
@@ -40,10 +74,11 @@ export function Invitation({
 						kind="radio"
 						label="Your answer"
 						className="invitation-answer"
-						segments={answers.map(({ answer: each, label }) => ({
+						segments={answers.map(({ answer: each, reply: r, label }) => ({
 							key: each,
 							label,
 							selected: each === answer,
+							onSelect: () => reply(r),
 						}))}
 					/>
 				</div>
@@ -54,18 +89,25 @@ export function Invitation({
 					<Status invitation={invitation} />
 					<span className="strong">{invitation.title}</span>
 					<span className="sm muted">{invitation.when}</span>
-					<Overlap id={answer === "unanswered" ? "asking" : "answered"}>
-						{answer === "unanswered" ? (
+					<Overlap id={prompt}>
+						{prompt === "ask" ? (
 							<span className="invitation-buttons">
-								<Button variant="primary" className="grow">
-									Accept
-								</Button>
-								<Button variant="soft">Maybe</Button>
-								<Button variant="ghost">Decline</Button>
+								{answers.map(({ answer: each, reply: r, label, card }) => (
+									<Button
+										key={each}
+										variant={card}
+										className={cx(card === "primary" && "grow")}
+										onClick={() => reply(r)}
+									>
+										{label}
+									</Button>
+								))}
 							</span>
 						) : (
 							<span className="invitation-buttons end">
-								<Button variant="ghost">Change</Button>
+								<Button variant="ghost" onClick={change.open}>
+									Change
+								</Button>
 							</span>
 						)}
 					</Overlap>
@@ -81,14 +123,16 @@ export function Invitation({
 						<span className="xs subtle">{invitation.details}</span>
 					</span>
 					<span className="settle invitation-large">
-						{answers.map(({ answer: each, label }) => (
+						{answers.map(({ answer: each, reply: r, label }) => (
 							<button
 								key={each}
 								type="button"
 								aria-pressed={each === answer}
+								onClick={() => reply(r)}
 								className={cx(
 									"btn lg press",
-									each === answer ? "primary pulse" : "soft",
+									each === answer ? "primary" : "soft",
+									each === answer && pulseOn(outcome),
 								)}
 							>
 								{label}

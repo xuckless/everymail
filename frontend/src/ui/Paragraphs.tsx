@@ -18,7 +18,7 @@ export function Paragraphs({
 				<p
 					// biome-ignore lint/suspicious/noArrayIndexKey: paragraphs carry no id and never reorder
 					key={i}
-					className={cx(settle && "settle stagger")}
+					className={cx(settle && "settle")}
 					style={settle ? stagger(i) : undefined}
 				>
 					{text}

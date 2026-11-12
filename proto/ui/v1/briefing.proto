@@ -35,6 +35,36 @@ message BriefingEdition {
   LineSection newsletters = 12;
   LineSection updates = 13;
   CalendarSection calendar = 14;
+  // Topics the user follows, each with a few items.
+  NewsSection news = 15;
+}
+
+message NewsSection {
+  oneof state {
+    NewsTopics topics = 1;
+    // The user follows no topics.
+    SectionEmpty none = 2;
+  }
+}
+
+message NewsTopics {
+  repeated NewsTopic topics = 1;
+}
+
+message NewsTopic {
+  // "Distributed systems"
+  string name = 1;
+  repeated NewsItem items = 2;
+}
+
+message NewsItem {
+  // "Why bounded queues beat retries under load"
+  string headline = 1;
+  // "The Backlog"
+  string source = 2;
+  // "Read at The Backlog". The data holds no address for an item, so there is no link to open:
+  // the label is text only.
+  string link_label = 3;
 }
 
 // A section with nothing in it: its text, such as "No updates".
@@ -83,12 +113,14 @@ message BriefingLine {
   string text = 2;
 }
 
-// Opens the agents screen (Intent.open_agents).
+// Opens the approval queue (Intent.open_approvals).
 message BriefingWaiting {
   reserved 2, 3;
   string title = 1;
   // The line under the title: "Gatekeeper · 46 mails in 90 days, you opened 2"
   string detail = 4;
+  // The approval it is: "a-jobstream"
+  string approval_id = 5;
 }
 
 message BriefingEvent {

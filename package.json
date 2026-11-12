@@ -15,7 +15,8 @@
 		"dev:desktop": "tauri dev",
 		"dev:web": "bun run wasm && bun run --cwd frontend dev",
 		"build:desktop": "bun run wasm && tauri build",
-		"check": "biome check && buf lint proto && bun run --filter '*' typecheck && bun run --cwd backend test && bun run --cwd site test && bun run --cwd frontend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
+		"mark": "bun design/mark.ts",
+		"check": "bun design/mark.ts --check && biome check && buf lint proto && bun run --filter '*' typecheck && bun run --cwd backend test && bun run --cwd site test && bun run --cwd frontend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.7",

@@ -1,7 +1,7 @@
 use js_sys::{Function, Uint8Array};
 use wasm_bindgen::prelude::*;
 
-use crate::Engine;
+use crate::{Demo, Engine};
 
 #[wasm_bindgen]
 pub struct WebEngine(Engine);
@@ -16,15 +16,20 @@ impl WebEngine {
             unchecked_param_type = "(bytes: Uint8Array) => void"
         )]
         on_view: Function,
-    ) -> Self {
-        let engine = Engine::new(backend_origin, |task| {
-            wasm_bindgen_futures::spawn_local(task)
-        });
+    ) -> Result<WebEngine, JsError> {
+        // The browser keeps the local database in memory: each tab syncs its own. The stand-in
+        // Backend serves it until the real one is built.
+        let engine = Engine::new(
+            backend_origin,
+            wasm_bindgen_futures::spawn_local,
+            None,
+            Box::new(Demo::new()),
+        )?;
         engine.subscribe(Box::new(move |view| {
             // An exception in the subscriber is the subscriber's to handle; the engine state is unaffected.
             let _ = on_view.call1(&JsValue::NULL, &Uint8Array::from(view.as_slice()));
         }));
-        Self(engine)
+        Ok(Self(engine))
     }
 
     pub fn intent(&self, bytes: &[u8]) -> Result<(), JsError> {

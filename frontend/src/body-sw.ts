@@ -16,14 +16,25 @@ self.addEventListener("activate", (event) =>
 	event.waitUntil(self.clients.claim()),
 );
 
+// A tab that does not answer in time (busy, or not running the app) counts as not knowing it.
+const answerWithin = 2000;
+const unknown: BodyAnswer = { bytes: undefined, policy: "" };
+
 function ask(client: Client, request: string) {
 	const channel = new MessageChannel();
 	const answer = new Promise<BodyAnswer>((resolve) => {
 		channel.port1.onmessage = (message) => resolve(message.data);
+		setTimeout(() => resolve(unknown), answerWithin);
 	});
 	client.postMessage(request, [channel.port2]);
 	return answer;
 }
+
+// Only the app's own pages run an engine; the landing site may share the origin.
+const appPage = (client: Client) => {
+	const { pathname } = new URL(client.url);
+	return pathname.startsWith("/u/") || pathname === "/sign-in";
+};
 
 const headers = (policy: string) => ({
 	"Content-Type": "text/html; charset=utf-8",
@@ -38,7 +49,7 @@ async function body(request: string) {
 		includeUncontrolled: true,
 	});
 	for (const client of clients) {
-		if (client.frameType !== "top-level") continue;
+		if (client.frameType !== "top-level" || !appPage(client)) continue;
 		const { bytes, policy } = await ask(client, request);
 		if (bytes) return new Response(bytes, { headers: headers(policy) });
 	}

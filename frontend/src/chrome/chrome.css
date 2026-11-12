@@ -1,4 +1,4 @@
-/* The frame, sidebar, rail and phone tab bar. Measurements follow the design's artboards. */
+/* The frame, sidebar and phone tab bar. Measurements follow the design's artboards. */
 
 .frame {
 	position: relative;
@@ -13,7 +13,23 @@
 	display: flex;
 	gap: var(--space-2);
 	margin: var(--space-2) var(--space-2) var(--space-2) 0;
+	transition: margin var(--t-move) var(--ease-in-out);
 }
+/* collapsed: the sidebar is gone and its toggle keeps a narrow gutter in the top left corner */
+.frame-collapsed .frame-main {
+	margin-left: 52px;
+}
+.gutter {
+	position: absolute;
+	top: var(--space-3);
+	left: var(--space-2);
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-3);
+}
+
 .frame-phone,
 .frame-bare {
 	flex-direction: column;
@@ -31,17 +47,14 @@
 	z-index: 50;
 }
 
-/* A screen's surface: tone, not borders. */
+/* A screen's surface: one tone up from the page, with a hairline so it holds its edge in both themes. */
 .panel {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
 	background: var(--surface);
 	border-radius: var(--radius-lg);
-}
-.grow {
-	flex: 1;
-	min-width: 0;
+	box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .connection {
@@ -53,21 +66,37 @@
 .connection .stack {
 	min-width: 0;
 }
+.gutter .connection {
+	flex-direction: column;
+}
 
 /* sidebar */
 .sidebar {
-	width: 248px;
+	width: 256px;
 	flex: none;
+	overflow: hidden;
+	transition: width var(--t-move) var(--ease-in-out);
+}
+.frame-collapsed .sidebar {
+	width: 0;
+}
+.sidebar-inner {
+	width: 256px;
+	height: 100%;
 	display: flex;
 	flex-direction: column;
 	padding: 0 10px var(--space-3);
 }
 .sidebar-head {
-	height: 48px;
+	height: 52px;
+	flex: none;
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	padding-right: var(--space-2);
+	gap: 10px;
+	padding-left: var(--space-2);
+}
+.sidebar .wordmark {
+	font-size: 16px;
 }
 .sidebar .compose {
 	height: 36px;
@@ -97,7 +126,9 @@
 	color: var(--subtle);
 }
 .group-label {
-	padding: var(--space-1) 10px 6px;
+	display: flex;
+	align-items: center;
+	padding: 0 2px 2px 10px;
 }
 .group-gap {
 	height: var(--space-2);
@@ -123,32 +154,6 @@
 	font-weight: 500;
 }
 
-/* rail */
-.rail {
-	width: 60px;
-	flex: none;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	padding: var(--space-4) 0 var(--space-3);
-}
-.rail-mark {
-	margin: var(--space-1) 0 14px;
-}
-.rail-item {
-	width: 40px;
-	height: 40px;
-}
-.rail-item[aria-current="page"] {
-	background: var(--hover);
-	color: var(--text);
-}
-.rail-status {
-	margin-top: auto;
-	flex-direction: column;
-}
-
 /* phone tab bar */
 .tabbar {
 	flex: none;
@@ -161,7 +166,7 @@
 	display: grid;
 }
 .tab .selection-mark {
-	border-radius: 14px;
+	border-radius: var(--radius-xl);
 }
 .tab {
 	position: relative;
@@ -201,14 +206,205 @@
 }
 
 /* The phone screens' header, under the status bar. */
+/* The phone's one screen head (PhoneHead, and Page on the phone): under the status corner. */
 .phone-head {
+	flex: none;
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);
-	padding: 48px var(--space-4) var(--space-2);
+	padding: 44px var(--space-4) var(--space-3);
 }
 .phone-bar {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
+	min-height: 44px;
+}
+/* a leading back or close button sits on the gutter, its icon in line with the content */
+:is(.phone-bar, .page-phone .page-title, .phone-bar .mail-toolbar)
+	> .icon-btn.touch:first-child {
+	margin-left: calc(-1 * var(--space-3));
+}
+
+/* The notice bar: bottom centre, over everything but overlays; above the tab bar on the phone. */
+.notice-dock {
+	position: absolute;
+	left: 50%;
+	bottom: var(--space-6);
+	transform: translateX(-50%);
+	z-index: 60;
+	display: grid;
+	width: min(440px, calc(100% - 32px));
+	pointer-events: none;
+}
+.notice-dock > * {
+	grid-area: 1 / 1;
+}
+.frame-phone .notice-dock {
+	bottom: 96px;
+}
+.notice {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 48px;
+	padding: 6px 6px 6px var(--space-4);
+	border-radius: var(--radius-lg);
+	background: var(--overlay);
+	box-shadow: var(--shadow-pop);
+	pointer-events: auto;
+}
+.notice-action {
+	color: var(--accent-text);
+}
+.notice-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 2px;
+	background: var(--accent);
+	transform-origin: left;
+	animation: noticeCountdown var(--ms) linear both;
+}
+@keyframes noticeCountdown {
+	from {
+		transform: scaleX(1);
+	}
+	to {
+		transform: scaleX(0);
+	}
+}
+
+/* The composer: docked bottom right on desktop, full screen on the phone. */
+.compose-window {
+	position: absolute;
+	right: var(--space-6);
+	bottom: 0;
+	z-index: 55;
+	width: min(560px, calc(100% - 48px));
+	height: min(560px, calc(100% - 48px));
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+	background: var(--surface);
+	box-shadow: var(--shadow-pop);
+	transform-origin: bottom right;
+}
+.compose-phone {
+	inset: 0;
+	width: auto;
+	height: auto;
+	border-radius: 0;
+	padding-top: 36px;
+}
+.compose-head {
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
+}
+.compose-fields {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 0 var(--space-4);
+}
+/* From, To and Subject have no box of their own; one hairline under each tells the fields apart,
+   as a mail form is drawn */
+.compose-line {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: 40px;
+	border-bottom: 1px solid var(--line);
+}
+.compose-key {
+	width: 52px;
+	flex: none;
+}
+.compose-line input,
+.compose-from {
+	flex: 1;
+	min-width: 0;
+	height: 38px;
+	background: transparent;
+	font-size: var(--fs-body);
+}
+.compose-body {
+	flex: 1;
+	min-height: 120px;
+	padding: var(--space-3) 0;
+	background: transparent;
+	font-size: 14.5px;
+	line-height: 1.6;
+	resize: none;
+}
+.compose-files {
+	margin: 0;
+	padding: 0 0 var(--space-2);
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+.compose-file {
+	max-width: 260px;
+	padding-right: 2px;
+}
+.compose-outcome {
+	padding: 0 var(--space-4);
+}
+.compose-foot {
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.compose-later {
+	width: 220px;
+}
+.new-folder {
+	padding: 0 2px var(--space-1) 6px;
+}
+.new-folder input {
+	height: 36px;
+	font-size: var(--fs-body);
+}
+.new-folder-note {
+	padding: 0 10px var(--space-1);
+}
+.open-plus {
+	transform: rotate(45deg);
+}
+.nav-draft {
+	min-height: 48px;
+}
+.mail-menu {
+	width: 240px;
+}
+/* With the composer open, the notice sits above it rather than over its footer. */
+.frame:not(.frame-phone):has(.compose-window) .notice-dock {
+	left: auto;
+	right: var(--space-6);
+	transform: none;
+	bottom: calc(min(560px, 100% - 48px) + var(--space-3));
+}
+/* On the phone the composer is a full-screen layer, over any sheet (z 80) it was opened from. */
+.compose-window.compose-phone {
+	z-index: 90;
+}
+.frame.frame-phone:has(.compose-window) .notice-dock {
+	bottom: 72px;
+	z-index: 95;
+}
+/* the composer's fields sit edge to edge, so their focus ring is drawn inside them */
+.compose-window :is(input, textarea, select):focus-visible {
+	outline-offset: -2px;
+	border-radius: var(--radius-sm);
 }

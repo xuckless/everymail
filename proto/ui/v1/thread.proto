@@ -6,15 +6,24 @@ import "ui/v1/common.proto";
 
 // One thread with the reply panel beside it. Back (Intent.back) returns to the inbox.
 message ThreadView {
+  reserved 4;
+  reserved "summary";
   string thread_id = 1;
   string subject = 2;
   // "Laurentian · 4 messages"
   string context = 3;
-  Summary summary = 4;
+  // Some message of it is starred.
+  bool starred = 8;
+  // Where it is: "Inbox · For you", "Archive", "Inbox · Updates · Receipts"
+  string place = 9;
   repeated ThreadMessage messages = 5;
   // Agent drafts answering this thread; usually none.
   repeated AgentDraft drafts = 6;
   ReplyPanel reply = 7;
+  MailActions actions = 10;
+  ScribeSummary scribe = 11;
+  // The latest message, for the toolbar's star (Intent.set_starred).
+  string message_id = 12;
 }
 
 message ThreadMessage {
@@ -26,6 +35,13 @@ message ThreadMessage {
   string preview = 3;
   // "Mon 16:12", "8:50"
   string time = 4;
+  // "to you, Priya and Tomas", "to Mira"
+  string recipients = 8;
+  // The message's own subject, shown under the sender: "Re: Slides for Thursday, can you take
+  // section 3?"
+  string subject = 9;
+  bool starred = 10;
+  repeated Attachment attachments = 11;
   // Intent.expand_message and Intent.collapse_message.
   oneof display {
     MessageCollapsed collapsed = 5;
@@ -35,6 +51,8 @@ message ThreadMessage {
 
 message MessageCollapsed {}
 
+// Reply, reply all and forward are Intent.open_composer; the star is Intent.set_starred; the rest
+// of the actions are ThreadView.actions.
 message MessageExpanded {
   // The message body, a complete HTML document served by the engine, for a sandboxed iframe with
   // sandbox="allow-scripts" and nothing else. Desktop: "body://localhost/<message id>"
@@ -69,10 +87,16 @@ message ComposeReady {
     GenerationEmpty empty = 5;
     GenerationWriting writing = 6;
     GenerationDraft draft = 7;
+    GenerationFailed failed = 9;
   }
   // The phone sheet's title: "Reply to Mira"
   string title = 8;
+  // Changes when the instruction was taken (Intent.write_reply): the Frontend empties its box.
+  uint32 revision = 10;
 }
+
+// Intents of the panel: Intent.select_compose_model, select_tone, write_reply (a quick reply is
+// written with its text as the instruction), use_reply, send_reply and clear_reply.
 
 message ModelChoice {
   Model model = 1;
@@ -105,9 +129,16 @@ message GenerationEmpty {
   string hint = 1;
 }
 
+// Intent.clear_reply stops it.
 message GenerationWriting {
   // "Writing with Claude Sonnet"
   string label = 1;
+}
+
+// Nothing was written; Intent.clear_reply clears it.
+message GenerationFailed {
+  // "Claude Sonnet did not answer in time"
+  string reason = 1;
 }
 
 message GenerationDraft {

@@ -17,7 +17,8 @@
 		"build:desktop": "bun run wasm && tauri build",
 		"mark": "bun design/mark.ts",
 		"clock": "! grep -rnE 'Date\\.now\\(\\)|new Date\\(\\)' backend/src",
-		"check": "bun design/mark.ts --check && biome check && buf lint proto && bun run --filter '*' typecheck && bun run clock && DATABASE_URL=${DATABASE_URL:-postgres://postgres:everymail@localhost:5432/everymail} bun run --cwd backend test && bun run --cwd site test && bun run --cwd frontend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
+		"durations": "! grep -rnE '[a-z]_(ms|millis|minutes|hours|days)\\b' proto/api backend/migrations",
+		"check": "bun design/mark.ts --check && biome check && buf lint proto && bun run --filter '*' typecheck && bun run clock && bun run durations && DATABASE_URL=${DATABASE_URL:-postgres://postgres:everymail@localhost:5432/everymail} bun run --cwd backend test && bun run --cwd site test && bun run --cwd frontend test && cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo clippy -p everymail-engine --target wasm32-unknown-unknown -- -D warnings && cargo test --workspace"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.7",

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package api.v1;
+
+// When something the client schedules comes due. The Backend computes the UTC instant when the request arrives.
+// An unset oneof is a decode error, never a state.
+message ScheduledTime {
+  oneof at {
+    // Seconds since the Unix epoch
+    int64 unix_seconds = 1;
+    WallTime wall = 2;
+  }
+}
+
+// A clock time in a zone. One skipped by a daylight saving change moves forward by the gap;
+// one that happens twice is the later. A date, time or zone that does not exist is refused as a bad request.
+message WallTime {
+  uint32 year = 1;
+  // 1 to 12
+  uint32 month = 2;
+  // 1 to 31
+  uint32 day = 3;
+  // 0 to 23, or 24 with minute 0 for the end of the day
+  uint32 hour = 4;
+  // 0 to 59
+  uint32 minute = 5;
+  // IANA, such as Europe/Berlin
+  string zone = 6;
+}

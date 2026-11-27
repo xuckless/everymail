@@ -43,19 +43,21 @@ Everything the Backend does on its own is a job: fetching mail, sending mail, sn
 - Waiting for an event covers a tool result, a provider batch result and another agent finishing
 - Executors claim jobs in batches and never poll when idle: enqueueing signals the executor in process, and a timer sleeps until the next due time. `Bun.sql` cannot receive `LISTEN/NOTIFY`, so that is added only when the executor becomes a separate process
 - No transaction and no executor is held open across an external call: claim and commit, call, then record and commit
-- One mechanism, several lanes. Each job kind is a lane with its own concurrency cap, retry policy and timeout, so slow agent steps never delay a send. Within a lane, jobs are claimed by due time. Priority between lanes comes with the per-user cap, the first limit lanes share
+- One mechanism, several lanes. Each job kind is a lane with its own concurrency cap, retry policy and timeout, so slow agent steps never delay a send. Within a lane and a user, jobs are claimed by due time. Each lane has a priority, which decides which of a user's lanes takes that user's room under the per-user cap first; a full lane never blocks the user's other lanes
 - Columns hold what the claim query needs; the rest of the payload is protobuf
 - A finished job is deleted; the run log is what is kept. The run log covers agent runs. It holds finished runs only, written by the same statement that deletes the job: a live run is its job row, and a run's id is its job's id. A failed run carries its reason from an explicit enum. A job of another kind that keeps failing shows on the thing it concerns: the account's status or the message's send state
 - The run log is kept 90 days. The transcript, which holds mail content and model output, is deleted after 30 days; a parked run keeps its transcript until it resolves
 - A job can repeat: it moves from running back to scheduled on the same row, so it never finishes and keeps nothing. Retention is one such job per user, run daily; it retries without limit, and one that keeps failing is only logged and retried hourly. Boot and every sign-in transaction ensure each user has one, so users and rows that predate it are covered. Each kept table adds its delete to that one sweep, with its days in one table in code
 - The executor runs inside the Backend process, behind an interface that allows a separate process later. A restart retries in-flight jobs from their start
 - Every row carries a user id. Claiming is fair across users and capped per user, so one backlog cannot starve the rest. Sized for tens to hundreds of users on the one VM
+- One claim per pass covers every lane with room. It goes round robin over users with due jobs, in turn order: longest since their last claim first, kept as `users.claimed_at` and stamped by the claim. Each user has at most `MAX_RUNNING_PER_USER` running across all lanes, counted from the running rows in Postgres. A due job of a user at the cap does not set the wake-up timer; that user's finishing job wakes the executor. Claims take turns on one Postgres advisory lock, so the cap holds however many executors claim
 
 ## Time
 
 - Postgres `now()` is the only source of "now". Client clocks are never trusted: clients send intents and the server stamps them
 - Instants are stored in UTC. A scheduled time arrives as an absolute UTC instant, or as wall time plus an IANA zone from which the server computes the instant. Recurrence rules keep their zone, because "daily at 08:00" is not one instant
-- Durations are in seconds everywhere in the Backend
+- Postgres converts wall time with its own time zone database, so the zone rules exist once. A wall time skipped by a daylight saving change moves forward by the gap; one that happens twice is the later. A date, time or zone that does not exist is refused as a bad request
+- Durations are integer seconds, named with a `_seconds` suffix in protobuf and columns. A constant in code may use a larger unit, such as retention's days
 - A proactive wakeup has a minimum interval of 900 seconds (15 minutes), with jitter
 - After downtime a missed schedule runs once, not once per missed slot. If the previous run is still going when the next is due, the next is skipped
 - A scheduled send, undo send (a 10 second delay on "send now") and snooze are the same thing: a job with a due time that can be edited or cancelled until it is claimed
@@ -210,7 +212,7 @@ Everything the app does with judgement is done by an agent the user can see. Not
 
 ## Safety caps and snooze presets
 
-- Fixed caps: 30 steps per run, 200 runs per agent per day, 3 concurrent runs per user
+- Fixed caps: 30 steps per run, 200 runs per agent per day, 3 concurrent runs per user, 4 running jobs per user across all lanes
 - Snooze presets, in the user's zone: Later today is 18:00, or 3 hours from now once it is past 15:00; Tomorrow is 08:00; This weekend is Saturday 09:00; Next week is Monday 08:00
 
 ## Running on the VM

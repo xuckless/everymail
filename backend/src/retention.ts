@@ -30,6 +30,7 @@ export async function sweep(sql: SQL, userId: string): Promise<void> {
 /** The retention lane: one job per user, ensured at boot and sign-in, that runs daily and never gives up. */
 export const retention = (sql: SQL): Lane => ({
 	concurrency: 1,
+	priority: 0,
 	timeoutSeconds: 60,
 	// Every run counts as an attempt, so a finite limit would end the job after that many days, and backoff has no meaning
 	retry: {

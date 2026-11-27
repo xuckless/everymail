@@ -13,7 +13,7 @@ import { HealthService } from "./gen/api/v1/health_pb";
 import { WaitlistService } from "./gen/api/v1/waitlist_pb";
 import { check } from "./health";
 import { serve } from "./http";
-import { lanes } from "./lanes";
+import { lanes, MAX_RUNNING_PER_USER } from "./lanes";
 import { migrate } from "./migrate";
 import type { OidcConfig } from "./oidc";
 import { ensure } from "./retention";
@@ -58,7 +58,7 @@ const table = new Map([
 ]);
 await migrate(sql);
 await ensure(sql);
-const executor = createExecutor(sql, lanes(sql));
+const executor = createExecutor(sql, lanes(sql), MAX_RUNNING_PER_USER);
 const pages = new Map([
 	["/auth/callback", signInCallback(sql, identifyWith(oidc), executor.wake)],
 ]);

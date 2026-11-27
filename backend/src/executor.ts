@@ -7,6 +7,7 @@ import {
 	type Job,
 	type Lane,
 	type Lanes,
+	laneOf,
 	type Outcome,
 	transition,
 } from "./job";
@@ -51,7 +52,11 @@ function settlement(
 
 /** Runs jobs inside this process. Holds only how many jobs each lane is running; all job state is in Postgres.
  * Never polls: a pass runs when woken, and a timer sleeps until the next due time or lease end. */
-export function createExecutor(sql: SQL, lanes: Lanes): Executor {
+export function createExecutor(
+	sql: SQL,
+	lanes: Lanes,
+	userCap: number,
+): Executor {
 	const running = new Map<string, number>();
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let pass: "idle" | "busy" | "busy, then again" | "stopped" = "idle";
@@ -81,18 +86,20 @@ export function createExecutor(sql: SQL, lanes: Lanes): Executor {
 	/** Claims what each lane has room for and starts it, then sleeps until the next due time. */
 	async function once() {
 		await expireLeases(sql, lanes);
-		for (const [kind, slots] of freeSlots(lanes, running)) {
-			const lane = lanes[kind];
-			if (!lane) continue;
-			for (const job of await claim(sql, kind, slots, lane.timeoutSeconds)) {
-				run(lane, job)
-					.catch((error) => console.error(`job ${job.id}: not recorded`, error))
-					.finally(wake);
-			}
-		}
+		const claimed = await claim(
+			sql,
+			lanes,
+			new Map(freeSlots(lanes, running)),
+			userCap,
+		);
+		for (const job of claimed)
+			run(laneOf(lanes, job.kind), job)
+				.catch((error) => console.error(`job ${job.id}: not recorded`, error))
+				.finally(wake);
 		const seconds = await secondsUntilNext(
 			sql,
 			freeSlots(lanes, running).map(([kind]) => kind),
+			userCap,
 		);
 		clearTimeout(timer);
 		if (seconds !== undefined)
